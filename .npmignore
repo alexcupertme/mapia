@@ -1,0 +1,10 @@
+src/
+node_modules/
+dist/**/*.map
+jest.config.js
+jest.config.unit.js
+pnpm-lock.yaml
+*.test.ts
+*.spec.ts
+benchmark
+.vscode

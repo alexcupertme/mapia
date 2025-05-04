@@ -1,0 +1,90 @@
+{
+  "name": "mapia",
+  "version": "1.0.0",
+  "description": "Type-first superfast data-mapper (JSON transformation library) for TypeScript. Fast, safe, and easy to use. Supports classes, interfaces, types",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "module": "lib/index.mjs",
+  "scripts": {
+    "build": "tsc",
+    "run:bench": "ts-node benchmark/run.ts",
+    "test": "jest --coverage --detectOpenHandles --forceExit --maxWorkers=2",
+    "start": "ts-node src/example.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexcupertme/mapia"
+  },
+  "author": {
+    "name": "Alexander Cupertino",
+    "email": "alexcupertme@gmail.com",
+    "url": "https://t.me/alexcupertme"
+  },
+  "bugs": {
+    "url": "https://github.com/samchon/typia/issues"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "files": [
+    "LICENSE",
+    "README.md",
+    "package.json",
+    "src",
+    "benchmark"
+  ],
+  "devDependencies": {
+    "@automapper/classes": "^8.8.1",
+    "@automapper/core": "^8.8.1",
+    "@stylistic/eslint-plugin": "^4.2.0",
+    "@tsconfig/node-lts": "^22.0.1",
+    "@types/benchmark": "^2.1.5",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.15.3",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "benchmark": "^2.1.4",
+    "class-transformer": "^0.5.1",
+    "eslint-import-resolver-typescript": "^4.3.4",
+    "eslint-plugin-import-x": "^4.11.0",
+    "eslint-plugin-jest": "^28.11.0",
+    "eslint-plugin-prettier": "^5.3.1",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-unicorn": "^59.0.0",
+    "jest": "^29.7.0",
+    "reflect-metadata": "^0.1.14",
+    "ts-jest": "^29.3.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "5.8.3"
+  },
+  "keywords": [
+    "fast",
+    "json",
+    "mapper",
+    "datamapper",
+    "automapper",
+    "automapper-ts",
+    "stringify",
+    "parse",
+    "object",
+    "serialization",
+    "deserialization",
+    "serializer",
+    "transform",
+    "convert",
+    "typescript",
+    "ajv",
+    "io-ts",
+    "zod",
+    "typia",
+    "schema",
+    "json-schema",
+    "generator",
+    "clone",
+    "runtime",
+    "type",
+    "typebox",
+    "checker",
+    "validator",
+    "prune"
+  ]
+}
