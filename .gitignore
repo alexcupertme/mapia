@@ -2,3 +2,4 @@ node_modules
 dist
 .vscode
 generate_graph.py
+mapia*.tgz

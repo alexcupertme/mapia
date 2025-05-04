@@ -8,3 +8,4 @@ pnpm-lock.yaml
 *.spec.ts
 benchmark
 .vscode
+mapia*.tgz
