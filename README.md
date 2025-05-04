@@ -5,17 +5,7 @@
 
 Mapia is a lightweight and type-safe object mapping library for TypeScript. It simplifies the process of transforming objects from one shape to another, ensuring type safety and flexibility.
 
-** VIDEO **
-
-** VIDEO **
-
-** VIDEO **
-
-** VIDEO **
-
-** VIDEO **
-
-** VIDEO **
+<img src="https://github.com/user-attachments/assets/048eccc7-a534-4c16-bf04-a8495d5da795" width="200">
 
 > [!NOTE]
 > - Zero dependencies
