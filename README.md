@@ -13,6 +13,7 @@ Mapia is a lightweight and type-safe object mapping library for TypeScript. It s
 
 > [!NOTE]
 > - Zero dependencies
+> - Works with any type, class, generics
 > - No boilerplate code except mapping itself
 > - JSON serialization/transformation is **35x faster** than `class-transformer`
 
