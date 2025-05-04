@@ -2,6 +2,10 @@
 
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![TypeScript](https://img.shields.io/badge/language-TypeScript-blue)
+[![Test & Coverage](https://github.com/alexcupertme/mapia/actions/workflows/test.yml/badge.svg)](https://github.com/alexcupertme/mapia/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/alexcupertme/mapia/branch/master/graph/badge.svg?token=GX1J5S2AKZ)](https://codecov.io/gh/alexcupertme/mapia)
+
+
 
 Mapia is a lightweight and type-safe object mapping library for TypeScript. It simplifies the process of transforming objects from one shape to another, ensuring type safety and flexibility.
 
