@@ -19,7 +19,7 @@ jobs:
         with:
           version: 8
           run_install: false
-          
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -31,7 +31,7 @@ jobs:
       - name: Run tests with coverage
         run: pnpm test
 
-      - name: Upload coverage to Coveralls
-        uses: coverallsapp/github-action@v2
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          slug: alexcupertme/mapia
