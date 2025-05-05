@@ -372,15 +372,55 @@ Some of the ready-to-use shapes provided by Mapia include:
 Example:
 
 ```ts
-import { stringShape, numberShape } from 'mapia';
+import { stringShape, numberShape, compileMapper } from 'mapia';
 
-const versions = {
-  react: 18,
-  'react-dom': 18,
+type ComplexVersion = {
+  major: number;
+  minor: number;
+  patch: number;
 };
 
-const mapped = mapRecord(versions, stringShape);
-console.log(mapped); // { react: '18', 'react-dom': '18' }
+type SerializedComplexVersion = {
+  major: string;
+  minor: string;
+  patch: string;
+};
+
+const version: Complex = {
+  major: 1,
+  minor: 0,
+  patch: 0,
+};
+
+const mapper = compileMapper<ComplexVersion, SerializedComplexVersion>({
+  major: transform(stringShape),
+  minor: transform(stringShape),
+  patch: transform(stringShape),
+});
+```
+
+If you also need to convert undefined to null, you can compose own shape:
+
+```ts
+import { numberShape, nullableShapeFrom } from 'mapia';
+
+type PostgresRequestsStats = {
+  total?: string;
+  success?: number;
+  failed?: number;
+}
+
+type PostgresRequestStatsDto = {
+  total: number | null;
+  success: number | null;
+  failed: number | null;
+}
+
+const statsMapper = compileMapper<PostgresRequestsStats, PostgresRequestStatsDto>({
+  total: transform(nullableShapeFrom(numberShape)), // number | undefined -> number | null
+  success: transform(nullableShapeFrom(numberShape)), // We also can avoid this long line, read about aliases below
+  failed: transform(nullableShapeFrom(numberShape)),
+});
 ```
 
 More shapes can be found in the [source code](./src/shapes.ts).
