@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/alexcupertme/mapia/branch/master/graph/badge.svg?token=GX1J5S2AKZ)](https://codecov.io/gh/alexcupertme/mapia)
 
 <p align="center">
-<img src="./public/mapia.svg" alt="Mapia logo" width="500"/>
+<img src="./static/mapia.svg" alt="Mapia logo" width="500"/>
 </p>
 
 Mapia is a lightweight and type-safe object mapping library for TypeScript. It simplifies the process of transforming objects from one shape to another, ensuring type safety and flexibility.
