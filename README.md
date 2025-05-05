@@ -11,7 +11,15 @@
 
 Mapia is a lightweight and type-safe object mapping library for TypeScript. It simplifies the process of transforming objects from one shape to another, ensuring type safety and flexibility.
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/C8GeUHRRTRw?si=jHVAqDhhCCQGF9AX" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+[▶️ Watch demo on YouTube](https://www.youtube.com/watch?v=C8GeUHRRTRw)
+
+<!-- This works in Docsify -->
+<iframe width="100%" height="400"
+  src="https://www.youtube.com/embed/C8GeUHRRTRw"
+  title="YouTube video player" frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  allowfullscreen>
+</iframe>
 
 **Why Mapia?**
 > - 🧙 IDE-friendly auto-mapping
