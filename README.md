@@ -5,11 +5,13 @@
 [![Test & Coverage](https://github.com/alexcupertme/mapia/actions/workflows/test.yml/badge.svg)](https://github.com/alexcupertme/mapia/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/alexcupertme/mapia/branch/master/graph/badge.svg?token=GX1J5S2AKZ)](https://codecov.io/gh/alexcupertme/mapia)
 
-
+<p align="center">
+<img src="./public/mapia.svg" alt="Mapia logo" width="500"/>
+</p>
 
 Mapia is a lightweight and type-safe object mapping library for TypeScript. It simplifies the process of transforming objects from one shape to another, ensuring type safety and flexibility.
 
-[https://github.com/user-attachments/assets/048eccc7-a534-4c16-bf04-a8495d5da795](https://github.com/user-attachments/assets/048eccc7-a534-4c16-bf04-a8495d5da795)
+[https://media-hosting.imagekit.io/87b2105e6a95488c/440207033-048eccc7-a534-4c16-bf04-a8495d5da795.mp4?Expires=1841091583&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=cDinuJ8UICFt~WLrba0kReDeTVOrTbQR5hSarJO9qJcVt~hdt5uy45n6S21OV5jQ666KnDapL9M9CIUoYLHq0vYrt-~KQJXwKgQMFiJwNRl4aXr1ANgavizV9i2e5pd7w-g5uUT094Ro8M8PbwPEFb4VWNxDHFgEMpEnENUsFxcqOXq6kGMU-Muit-uzqq4EwON0xF~boq5KTWdJSO7~xHjguj1zBLw~O6fj1~SBifiXDPEb-PKHveKyFtss4ZdSckx-paA0wnU94dEKHhHNATVM6mzyrReLNYH5cQ3yKjWsEkW~j08A5kxoSLVJrrv5o~BA7zq4cOBqr-2MoHWjjg__](https://media-hosting.imagekit.io/87b2105e6a95488c/440207033-048eccc7-a534-4c16-bf04-a8495d5da795.mp4?Expires=1841091583&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=cDinuJ8UICFt~WLrba0kReDeTVOrTbQR5hSarJO9qJcVt~hdt5uy45n6S21OV5jQ666KnDapL9M9CIUoYLHq0vYrt-~KQJXwKgQMFiJwNRl4aXr1ANgavizV9i2e5pd7w-g5uUT094Ro8M8PbwPEFb4VWNxDHFgEMpEnENUsFxcqOXq6kGMU-Muit-uzqq4EwON0xF~boq5KTWdJSO7~xHjguj1zBLw~O6fj1~SBifiXDPEb-PKHveKyFtss4ZdSckx-paA0wnU94dEKHhHNATVM6mzyrReLNYH5cQ3yKjWsEkW~j08A5kxoSLVJrrv5o~BA7zq4cOBqr-2MoHWjjg__ ':include :type=video controls width=100%')
 
 
 **Why Mapia?**

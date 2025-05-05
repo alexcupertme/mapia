@@ -4,6 +4,8 @@ node_modules/
 *.js.map
 *.spec.*
 *.test.*
+index.html
+public
 
 # Optionally match deeper files too
 **/*.d.ts.map
