@@ -423,10 +423,6 @@ Mapia eliminates these problems by providing a declarative and type-safe approac
 
 With Mapia, you can be confident that your mappings are correct and type-safe, reducing the risk of runtime errors and silent failures.
 
-## Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
-
 ## Benchmark
 
 ![image](./benchmark/benchmark.png)
@@ -438,6 +434,14 @@ Run it yourself (first clone repo):
 ```bash
 pnpm run:bench
 ```
+
+## ❤️ Support Mapia
+
+If you find Mapia useful, please give it a ⭐ on GitHub! It helps visibility and motivates continued development. 🤩
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
 
 ## License
 
