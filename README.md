@@ -208,10 +208,10 @@ yarn add mapia
 ## Usage
 
 There are 4 ways what we can do with a field
-1. **Rename**: Rename a field from the source object to the destination object. You **cannot** pass a function here, only a string. You also cannot pass own property name, and property name that don't match by type. This is a verbose way to know what you are doing.
+1. **Rename**: Basically, just picks value from another field in source. You **cannot** pass a function here, only a field key. You also cannot pass own property name, and property name that don't match by type. This is a verbose way to know what you are doing.
 ```ts
 const userMapper = compileMapper<UserResponse, UserEntity>({
-  id: rename('userId'), // This will rename the field 'id' to 'userId'
+  id: rename('userId'), // This will pick value from source 'userId' and pass it to 'id'
   id: rename('id'), // Will throw error
   id: rename('currency') // Accidentally specified property with wrong type, you'll get a type error
 });
@@ -288,30 +288,37 @@ console.log(userEntity);
 ### Nested Structures
 
 ```ts
-type Address = {
+type CurrentLocation = {
+  lat: number;
+  lon: number;
   city: string;
   country: string;
 };
 
+type Address = {
+  city: string;
+  country: string;
+}
+
 type UserResponse = {
   name: string;
-  address: Address;
+  location: CurrentLocation;
 };
 
 type UserEntity = {
   fullName: string;
-  location: Address;
+  address: Address;
 };
 
-const addressMapping: SimpleMapper<Address, Address> = {
+const addressMapper = compileMapper<CurrentLocation, Address> = ({
   city: "city",
   country: "country",
-};
+});
 
-const userMapping: SimpleMapper<UserResponse, UserEntity> = {
+const userMapper = compileMapper<UserResponse, UserEntity>({
   fullName: rename("name"),
-  location: transformWithRename((user) => mapOne(user.address, addressMapping)),
-};
+  address: transformWithRename((user) => addressMapper.mapOne(user.currentLocation)),
+});
 
 const userResponse: UserResponse = {
   name: "John Doe",
@@ -321,9 +328,12 @@ const userResponse: UserResponse = {
   },
 };
 
-const userEntity = mapOne(userResponse, userMapping);
-console.log(userEntity);
+const userEntity = userMapper.mapOne(userResponse);
 ```
+
+### Other
+
+More examples can be found [here](./examples)
 
 ## Why Mapia?
 
@@ -341,7 +351,7 @@ AutoMapper-TS is a popular library for object mapping, but it has some significa
 
 ### Example of Issues with AutoMapper-TS
 
-
+```ts
 export const mapper: Mapper = createMapper({
   strategyInitializer: classes(),
 });
@@ -357,6 +367,7 @@ createMap(
     mapFrom((src) => src.id),
   ),
 );
+```
 
 ```ts
 import { AutoMapper, ProfileBase } from 'automapper-ts';
@@ -403,40 +414,7 @@ console.log(userEntity);
 
 ### How Mapia Solves These Issues
 
-Mapia eliminates these problems by providing a declarative and type-safe approach to object mapping. Here's the same example implemented with Mapia:
-
-```ts
-import { mapOne, rename, transform, SimpleMapper } from 'mapia';
-
-type UserResponse = {
-  id: string;
-  name: string;
-  age: number;
-};
-
-type UserEntity = {
-  id: number;
-  fullName: string;
-  age: number;
-};
-
-const userMapping: SimpleMapper<UserResponse, UserEntity> = {
-  id: transform((x) => Number(x)),
-  fullName: rename('name'),
-  age: 'age',
-};
-
-const userResponse: UserResponse = {
-  id: '1',
-  name: 'John Doe',
-  age: 25,
-};
-
-const userEntity = mapOne(userResponse, userMapping);
-console.log(userEntity);
-// Output: { id: 1, fullName: 'John Doe', age: 25 }
-// All fields are mapped correctly, and type safety ensures no fields are missed.
-```
+Mapia eliminates these problems by providing a declarative and type-safe approach to object mapping.
 
 With Mapia, you can be confident that your mappings are correct and type-safe, reducing the risk of runtime errors and silent failures.
 

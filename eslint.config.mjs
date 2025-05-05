@@ -24,7 +24,6 @@ export default [
           project: './tsconfig.json',
         }),
       ],
-      awawd
     },
     ignores: ["index.ts", "**/common/mc/", "example.ts"],
     files: ["src/**/*.ts"],
