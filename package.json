@@ -1,10 +1,14 @@
 {
   "name": "mapia",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Type-first superfast data-mapper (JSON transformation library) for TypeScript. Fast, safe, and easy to use. Supports classes, interfaces, types",
-  "main": "dist/cjs/index.js",
-  "module": "dist/esm/index.mjs",
-  "types": "dist/esm/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "import": "./dist/index.mjs",
+    "require": "./dist/index.cjs"
+  },
   "scripts": {
     "build:esm": "tsc --project tsconfig.esm.json",
     "build:cjs": "tsc --project tsconfig.cjs.json",
