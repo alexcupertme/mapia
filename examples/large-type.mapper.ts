@@ -244,12 +244,6 @@ const publishConfig = compileMapper<ReplaceUndefinedWithNull<PublishConfigRespon
   access: transform(x => x as "public" | "restricted")
 })
 
-const maintainersMapper = compileMapper<ReplaceUndefinedWithNull<MaintainerResponse>, MaintainerEntity>({
-  name: "name",
-  email: "email",
-  url: transform(x => x ? new URL(x) : null)
-})
-
 const distEntity = compileMapper<ReplaceUndefinedWithNull<DistResponse>, DistEntity>({
   shasum: "shasum",
   tarball: transform(x => new URL(x)),

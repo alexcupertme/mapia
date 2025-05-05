@@ -11,11 +11,13 @@ Mapia is a lightweight and type-safe object mapping library for TypeScript. It s
 
 [https://github.com/user-attachments/assets/048eccc7-a534-4c16-bf04-a8495d5da795](https://github.com/user-attachments/assets/048eccc7-a534-4c16-bf04-a8495d5da795)
 
-> [!NOTE]
-> - Zero dependencies
-> - Works with any type, class, generics
-> - No boilerplate code except mapping itself
-> - JSON serialization/transformation is **35x faster** than `class-transformer`
+
+**Why Mapia?**
+> - 🧙 IDE-friendly auto-mapping
+> - 🪶 Zero dependencies, 80kb unzipped size. Can be used in browsers!
+> - 🧪 Type-safe, works with any type, class, generics
+> - 🧼 Minimal setup, no boilerplate
+> - ⚡ **35x faster** than `class-transformer`
 
 # Table of Contents
 - [Mapia](#mapia)
@@ -24,7 +26,6 @@ Mapia is a lightweight and type-safe object mapping library for TypeScript. It s
   - [Usage](#usage)
     - [Basic Example](#basic-example)
     - [Nested Structures](#nested-structures)
-  - [Why Mapia?](#why-mapia)
   - [Why Mapia is Better than AutoMapper-TS](#why-mapia-is-better-than-automapper-ts)
     - [The Problem with AutoMapper-TS](#the-problem-with-automapper-ts)
     - [Example of Issues with AutoMapper-TS](#example-of-issues-with-automapper-ts)
@@ -35,7 +36,7 @@ Mapia is a lightweight and type-safe object mapping library for TypeScript. It s
 
 ## Introduction
 
-When you work with DTOs, entities, gRPC request, responses, or any other data structures, you always have this situation:
+When working with JSON objects, DTOs, entities, API responses, or other structured data, you often face this common problem:
 
 ```ts
 // Some Input type "A"
@@ -64,7 +65,7 @@ persistToDB(input); // Type 'InputDto' is not assignable to type 'Entity'
 
 This is just a simple example, but in reality, you can have dozens of the models, that are almost the same, but they dont.
 
-Here how you can solve this problem with Mapia.
+Here's how you can solve this problem with Mapia.
 
 ```ts
 import { compileMapper, rename, transform, ignore } from 'mapia';
@@ -86,7 +87,7 @@ type Entity = {
 // Here we are just described Input and Output in our mapper as type arguments
 const inputToEntityMapper = compileMapper<InputDto, Entity>({
   field1: transform((x) => Number(x)),
-  otherField: "otherField", // All these string fields has been hinted by IDE and autofilled. This is a real automapping magic 🔮 
+  otherField: "otherField", // These fields are auto-suggested by your IDE, thanks to strong type inference. This is a real automapping magic 🔮 
   anotherField: "anotherField", // If your Input or Output shapes changes, you'll immediately get a type check error
   yetAnotherField: "yetAnotherField",
 });
@@ -94,7 +95,13 @@ const inputToEntityMapper = compileMapper<InputDto, Entity>({
 const persistToDB = (input: Partial<Entity>) => {
   // Some logic to persist to DB
 }
-const input: InputDto = {...} 
+
+const input: InputDto = {  
+  field1: "123",
+  otherField: "...",
+  ...
+};
+
 persistToDB(inputToEntityMapper.mapOne(input)); // We are chill here 🍹
 ```
 
@@ -173,7 +180,7 @@ export const bankAccountMapper = mapia.compileMapper<BankAccountResponse, BankAc
   currency: 'currency',
   status: 'status',
   settings: transformWithRename((x) => bankSettingsMapper.mapOne(x.settings)), // You can compose mappers in a functional way
-  statistics: 'statistics' // If you're exactly matching your resulting type, you just dont have to write mapper, even though statisics is a nested object
+  statistics: 'statistics' // If you're exactly matching your resulting type, you just dont have to write mapper for it - even though statisics nested - because types match
 });
 
 const bankAccountResponse: BankAccountResponse[] = [{...}] // A lot of bank accounts
@@ -234,7 +241,7 @@ const userMapper = compileMapper<UserResponse, UserEntity>({
 });
 ```
 
-4. **Transform with Rename**: You can change the whole shape of the property, its type and name. This is a very verbose way to say "yes, this property doesnt match at all, i am doing that risky operation"
+4. **Transform with Rename**: You can change the whole shape of the property, its type and name. This is an explicit way of saying: "Yes, this property doesn’t match, and I know what I'm doing."
 ```ts
 const userMapper = compileMapper<UserResponse, UserEntity>({
   id: transform((x) => Number(x)),
@@ -317,7 +324,7 @@ const addressMapper = compileMapper<CurrentLocation, Address> = ({
 
 const userMapper = compileMapper<UserResponse, UserEntity>({
   fullName: rename("name"),
-  address: transformWithRename((user) => addressMapper.mapOne(user.currentLocation)),
+  address: transformWithRename((user) => addressMapper.mapOne(user.location)),
 });
 
 const userResponse: UserResponse = {
@@ -334,8 +341,6 @@ const userEntity = userMapper.mapOne(userResponse);
 ### Other
 
 More examples can be found [here](./examples)
-
-## Why Mapia?
 
 ## Why Mapia is Better than AutoMapper-TS
 
