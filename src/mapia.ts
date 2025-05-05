@@ -241,12 +241,17 @@ export type SimpleMapper<
   Destination extends Record<string, any>,
 > = Required<MapMatchingKeys<Source, Destination>>;
 
+export type MapOneFn<Source, Destination> = (source: Source) => Destination;
+export type MapManyFn<Source, Destination> = (
+  source: Source[],
+) => Destination[];
+
 export type MapperFns<
   Source extends Record<string, any>,
   Destination extends Record<string, any>,
 > = {
-  mapOne: (source: Source) => Destination;
-  mapMany: (source: Source[]) => Destination[];
+  mapOne: MapOneFn<Source, Destination>;
+  mapMany: MapManyFn<Source, Destination>;
 };
 
 /**
@@ -388,4 +393,38 @@ export function compileMapper<
   };
 }
 
+export function mapRecord<I, O>(
+  input: Record<string, I>,
+  mapper: (value: I) => O,
+): Record<string, O> {
+  const result: Record<string, O> = {};
+
+  for (const key in input) {
+    if (Object.prototype.hasOwnProperty.call(input, key)) {
+      result[key] = mapper(input[key]);
+    }
+  }
+  return result;
+}
+
 export default { compileMapper };
+
+/**
+ * Alias for compileMapper function
+ */
+export const mv = rename;
+
+/**
+ * Alias for transform function
+ */
+export const tr = transform;
+
+/**
+ * Alias for transformWithRename function
+ */
+export const trw = transformWithRename;
+
+/**
+ * Alias for ignore function
+ */
+export const ig = ignore;

@@ -3,3 +3,4 @@ dist
 .vscode
 generate_graph.py
 mapia*.tgz
+coverage

@@ -2,6 +2,7 @@ import {
   AssertEqual,
   compileMapper,
   ignore,
+  mapRecord,
   rename,
   SimpleMapper,
   transform,
@@ -296,5 +297,109 @@ describe("mapia", () => {
     > = true;
 
     expect(mapped).toEqual(expected);
+  });
+  it("should handle edge cases for mapOne", () => {
+    type Source = {
+      id: string;
+      name: string;
+    };
+
+    type Destination = {
+      id: number;
+      name: string;
+    };
+
+    const mapper = compileMapper<Source, Destination>({
+      id: transform((x) => Number.parseInt(x, 10)),
+      name: "name",
+    });
+
+    const source: Source = { id: "123", name: "Test" };
+    const expected: Destination = { id: 123, name: "Test" };
+
+    const mapped = mapper.mapOne(source);
+
+    expect(mapped).toEqual(expected);
+  });
+
+  it("should handle edge cases for mapMany", () => {
+    type Source = {
+      id: string;
+      name: string;
+    };
+
+    type Destination = {
+      id: number;
+      name: string;
+    };
+
+    const mapper = compileMapper<Source, Destination>({
+      id: transform((x) => Number.parseInt(x, 10)),
+      name: "name",
+    });
+
+    const sources: Source[] = [
+      { id: "123", name: "Test1" },
+      { id: "456", name: "Test2" },
+    ];
+
+    const expected: Destination[] = [
+      { id: 123, name: "Test1" },
+      { id: 456, name: "Test2" },
+    ];
+
+    const mapped = mapper.mapMany(sources);
+
+    expect(mapped).toEqual(expected);
+  });
+
+  it("should handle mapRecord", () => {
+    type SourceVal = {
+      name: string;
+      age: number;
+    };
+
+    type Source = {
+      [key: string]: SourceVal;
+    };
+
+    type DestinationVal = {
+      fullName: string;
+      yearsOld: number;
+    };
+
+    type Destination = {
+      [key: string]: DestinationVal;
+    };
+
+    const source: Source = {
+      user1: { name: "John", age: 30 },
+      user2: { name: "Jane", age: 25 },
+    };
+
+    const sourceToDestinationValMapper = compileMapper<
+      SourceVal,
+      DestinationVal
+    >({
+      fullName: rename("name"),
+      yearsOld: rename("age"),
+    });
+
+    const sourceToDestinationMapped = mapRecord(
+      source,
+      sourceToDestinationValMapper.mapOne,
+    );
+
+    const expected: Destination = {
+      user1: { fullName: "John", yearsOld: 30 },
+      user2: { fullName: "Jane", yearsOld: 25 },
+    };
+
+    const _assert: AssertEqual<
+      typeof sourceToDestinationMapped,
+      typeof expected
+    > = true;
+
+    expect(sourceToDestinationMapped).toEqual(expected);
   });
 });

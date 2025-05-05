@@ -1,18 +1,18 @@
 {
   "name": "mapia",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Type-first superfast data-mapper (JSON transformation library) for TypeScript. Fast, safe, and easy to use. Supports classes, interfaces, types",
   "main": "dist/cjs/index.js",
-  "typings": "lib/index.d.ts",
   "module": "dist/esm/index.mjs",
   "types": "dist/esm/index.d.ts",
   "scripts": {
     "build:esm": "tsc --project tsconfig.esm.json",
     "build:cjs": "tsc --project tsconfig.cjs.json",
-    "build": "rimraf dist && npm run build:esm && npm run build:cjs",
+    "build": "rimraf dist && tsup",
     "run:bench": "ts-node benchmark/run.ts",
-    "test": "jest --coverage --detectOpenHandles --forceExit --maxWorkers=2",
-    "start": "ts-node src/example.ts"
+    "run:shape": "ts-node src/shapes.ts",
+    "run:example": "ts-node ./examples/index.ts",
+    "test": "jest --coverage --detectOpenHandles --forceExit --maxWorkers=2"
   },
   "repository": {
     "type": "git",
@@ -29,10 +29,8 @@
   "license": "MIT",
   "sideEffects": false,
   "files": [
-    "LICENSE",
-    "README.md",
-    "package.json",
-    "dist"
+    "dist",
+    "README.md"
   ],
   "devDependencies": {
     "@automapper/classes": "^8.8.1",
@@ -57,6 +55,7 @@
     "rimraf": "^6.0.1",
     "ts-jest": "^29.3.2",
     "tsconfig-paths": "^4.2.0",
+    "tsup": "^8.4.0",
     "typescript": "5.8.3"
   },
   "keywords": [

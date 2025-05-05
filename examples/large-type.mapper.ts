@@ -7,7 +7,7 @@ type AuthorResponse = {
 };
 
 type RepositoryResponse = {
-  type: string;
+  type: "git" | "svn" | "mercurial";
   url: string;
 };
 
@@ -30,13 +30,13 @@ type ContributorResponse = {
 };
 
 type FundingResponse = {
-  type: string;
+  type: "individual" | "organization";
   url: string;
 };
 
 type PublishConfigResponse = {
   registry?: string;
-  access?: string;
+  access?: "public" | "restricted";
 };
 
 type MaintainerResponse = {
@@ -53,16 +53,16 @@ type DistResponse = {
 
 type PackageRegistryEntryResponse = {
   name: string;
-  version: string;
+  version: Version;
   description: string;
   author: AuthorResponse;
   license: string;
   repository: RepositoryResponse;
   keywords: string[];
-  dependencies: Record<string, string>;
-  devDependencies: Record<string, string>;
-  peerDependencies?: Record<string, string>;
-  optionalDependencies?: Record<string, string>;
+  dependencies: Record<string, Version>;
+  devDependencies?: Record<string, Version>;
+  peerDependencies?: Record<string, Version>;
+  optionalDependencies?: Record<string, Version>;
   scripts: Record<string, string>;
   engines?: EnginesResponse;
   bugs?: BugsResponse;
@@ -144,7 +144,7 @@ type PackageRegistryEntryEntity = {
   repository: RepositoryEntity;
   keywords: string[];
   dependencies: Record<string, Version>;
-  devDependencies: Record<string, Version>;
+  devDependencies: Record<string, Version> | null;
   peerDependencies: Record<string, Version> | null;
   optionalDependencies: Record<string, Version> | null;
   scripts: Record<string, string>;
@@ -188,7 +188,18 @@ function replaceUndefinedWithNull<T>(obj: T): ReplaceUndefinedWithNull<T> {
   return result as ReplaceUndefinedWithNull<T>;
 }
 
-import { compileMapper, rename, transform } from "../src";
+import {
+  compileMapper,
+  MO,
+  mv,
+  nullableShape,
+  nullMM,
+  nullMO,
+  tr,
+  transform,
+  urlOrNullShape,
+  urlOrThrowShape,
+} from "../src";
 
 const authorMapper = compileMapper<
   ReplaceUndefinedWithNull<AuthorResponse>,
@@ -222,7 +233,7 @@ const bugsMapper = compileMapper<
   BugsEntity
 >({
   email: "email",
-  url: transform((x) => new URL(x)),
+  url: tr(urlOrThrowShape),
 });
 
 const contributorsMapper = compileMapper<
@@ -231,27 +242,39 @@ const contributorsMapper = compileMapper<
 >({
   name: "name",
   email: "email",
-  url: transform((x) => (x ? new URL(x) : null)),
+  url: tr(urlOrNullShape),
 });
 
 const fundingMapper = compileMapper<FundingResponse, FundingEntity>({
-  type: transform(x => x as "individual" | "organization"),
-  url: transform(x => new URL(x))
-})
+  type: "type",
+  url: tr(urlOrThrowShape),
+});
 
-const publishConfig = compileMapper<ReplaceUndefinedWithNull<PublishConfigResponse>, PublishConfigEntity>({
-  registry: transform(x => x ? new URL(x) : null),
-  access: transform(x => x as "public" | "restricted")
-})
+const publishConfig = compileMapper<
+  ReplaceUndefinedWithNull<PublishConfigResponse>,
+  PublishConfigEntity
+>({
+  registry: tr(urlOrNullShape),
+  access: tr(nullableShape()),
+});
 
-const distEntity = compileMapper<ReplaceUndefinedWithNull<DistResponse>, DistEntity>({
+const distEntity = compileMapper<
+  ReplaceUndefinedWithNull<DistResponse>,
+  DistEntity
+>({
   shasum: "shasum",
-  tarball: transform(x => new URL(x)),
-  integrity: "integrity"
-})
+  tarball: tr(urlOrThrowShape),
+  integrity: "integrity",
+});
 
+/**
+ * Here we using aliases to make the code more readable
+ * and to avoid long lines.
+ * 
+ * More about them https://github.com/alexcupertme/mapia/blob/main/READNE.md#Aliases
+ */
 const packageRegistryFromResponseToEntity = compileMapper<
-  ReplaceUndefinedWithNull<PackageRegistryEntryResponse>,
+  PackageRegistryEntryResponse,
   PackageRegistryEntryEntity
 >({
   name: "name",
@@ -259,36 +282,97 @@ const packageRegistryFromResponseToEntity = compileMapper<
   license: "license",
   keywords: "keywords",
   scripts: "scripts",
-  private: "private",
-  readme: "readme",
-  homepage: transform((x) => (x ? new URL(x) : null)),
-  version: transform((x) => x as Version),
-  author: transform(x => authorMapper.mapOne(replaceUndefinedWithNull(x))),
-  repository: transform(x => repositoryMapper.mapOne(replaceUndefinedWithNull(x))),
-  dependencies: transform((x) => x as Record<string, Version>), // Remember that mapia does not validate fields, so you should make strong endpoint constraints (dto)
-  devDependencies: transform((x) => x as Record<string, Version>),
-  peerDependencies: transform((x) => x as Record<string, Version>),
-  optionalDependencies: transform((x) => x as Record<string, Version>),
-  engines: transform((x) =>
-    x ? enginesMapper.mapOne(replaceUndefinedWithNull(x)) : null
-  ),
-  bugs: transform((x) =>
-    x ? bugsMapper.mapOne(replaceUndefinedWithNull(x)) : null
-  ),
-  contributors: transform((x) =>
-    x
-      ? contributorsMapper.mapMany(x.map((x) => replaceUndefinedWithNull(x)))
-      : null
-  ),
-  funding: transform(x => x ? fundingMapper.mapOne(replaceUndefinedWithNull(x)) : null),
-  publishConfig: transform(x => x ? publishConfig.mapOne(replaceUndefinedWithNull(x)) : null),
-  maintainers: transform((x) =>
-    x
-      ? contributorsMapper.mapMany(x.map((x) => replaceUndefinedWithNull(x)))
-      : null
-  ),
-  dist: transform(x => x ? distEntity.mapOne(replaceUndefinedWithNull(x)) : null),
-  hasTwoFactorAuth: rename('twoFactor'),
-  enabledNotifications: rename('notifications'),
-  safeMode: rename('safeMode'),
+  private: tr(nullableShape()),
+  readme: tr(nullableShape()),
+  homepage: tr(urlOrNullShape),
+  version: "version",
+  author: tr(MO(authorMapper)),
+  repository: tr(MO(repositoryMapper)),
+  dependencies: "dependencies",
+  devDependencies: tr(nullableShape()),
+  peerDependencies: tr(nullableShape()),
+  optionalDependencies: tr(nullableShape()),
+  engines: tr(nullMO(enginesMapper)),
+  bugs: tr(nullMO(bugsMapper)),
+  contributors: tr(nullMM(contributorsMapper)),
+  funding: tr(nullMO(fundingMapper)),
+  publishConfig: tr(nullMO(publishConfig)),
+  maintainers: tr(nullMM(contributorsMapper)),
+  dist: tr(nullMO(distEntity)),
+  hasTwoFactorAuth: mv("twoFactor"),
+  enabledNotifications: mv("notifications"),
+  safeMode: mv("safeMode"),
 });
+
+const packageRegistryResponse: PackageRegistryEntryResponse = {
+  name: "example-package",
+  version: "1.0.0",
+  description: "An example package",
+  author: {
+    name: "Steve Jobs",
+    email: "steve.jobs@gmail.com",
+    url: "https://apple.com",
+  },
+  license: "MIT",
+  repository: {
+    type: "git",
+    url: "https://github.com/facebook/react",
+  },
+  keywords: ["example", "package"],
+  dependencies: {
+    react: "18.0.0",
+    "react-dom": "18.0.0",
+  },
+  devDependencies: {
+    typescript: "4.5.0",
+    jest: "27.0.0",
+  },
+  scripts: {
+    start: "react-scripts start",
+    build: "react-scripts build",
+    test: "react-scripts test",
+    eject: "react-scripts eject",
+  },
+  engines: {
+    node: ">=14.0.0",
+    npm: ">=6.0.0",
+    pnpm: ">=6.0.0",
+    yarn: ">=1.0.0",
+  },
+  bugs: {
+    url: "https://github.com/facebook/react/issues",
+    email: "steve.jobs@gmail.com",
+  },
+  homepage: "https://github.com/facebook/react",
+  contributors: [
+    {
+      name: "Steve Jobs",
+      email: "steve.jobs@gmail.com",
+      url: "https://apple.com",
+    },
+  ],
+  funding: {
+    type: "individual",
+    url: "https://github.com/facebook/react",
+  },
+  private: false,
+  publishConfig: {
+    registry: "https://registry.npmjs.org/",
+    access: "public",
+  },
+  readme: "This is an example package.",
+  maintainers: [],
+  twoFactor: true,
+  notifications: true,
+  safeMode: true,
+  dist: {
+    shasum: "abc123",
+    tarball:
+      "https://registry.npmjs.org/example-package/-/example-package-1.0.0.tgz",
+    integrity: "sha512-abc123",
+  },
+};
+
+console.log(
+  packageRegistryFromResponseToEntity.mapOne(packageRegistryResponse)
+);

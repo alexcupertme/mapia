@@ -26,6 +26,14 @@ Mapia is a lightweight and type-safe object mapping library for TypeScript. It s
   - [Usage](#usage)
     - [Basic Example](#basic-example)
     - [Nested Structures](#nested-structures)
+    - [Other](#other)
+  - [Advanced Usage](#advanced-usage)
+    - [Aliases](#aliases)
+    - [Functional Programming Style](#functional-programming-style)
+    - [Shapes](#shapes)
+      - [Ready-to-Use Shapes](#ready-to-use-shapes)
+      - [Creating Your Own Shapes](#creating-your-own-shapes)
+  - [`mapRecord`](#maprecord)
   - [Why Mapia is Better than AutoMapper-TS](#why-mapia-is-better-than-automapper-ts)
     - [The Problem with AutoMapper-TS](#the-problem-with-automapper-ts)
     - [Example of Issues with AutoMapper-TS](#example-of-issues-with-automapper-ts)
@@ -341,6 +349,125 @@ const userEntity = userMapper.mapOne(userResponse);
 ### Other
 
 More examples can be found [here](./examples)
+
+## Advanced Usage
+
+
+### Shapes
+
+Shapes are predefined or custom functions that help you transform data types. Mapia provides several ready-to-use shapes, and you can also create your own.
+
+Shapes are written with love to a functional programming style, so you can compose them together.
+
+#### Ready-to-Use Shapes
+
+Some of the ready-to-use shapes provided by Mapia include:
+
+- `stringShape`: Converts a value to a string.
+- `numberShape`: Converts a value to a number.
+- `dateShape`: Converts a value to a Date object.
+- `urlOrNullShape`: Converts a value to a URL or returns `null` if the conversion fails.
+- `urlOrThrowShape`: Converts a value to a URL or throws an error if the conversion fails.
+
+Example:
+
+```ts
+import { stringShape, numberShape } from 'mapia';
+
+const versions = {
+  react: 18,
+  'react-dom': 18,
+};
+
+const mapped = mapRecord(versions, stringShape);
+console.log(mapped); // { react: '18', 'react-dom': '18' }
+```
+
+More shapes can be found in the [source code](./src/shapes.ts).
+
+### Creating Your Own Shapes
+
+You can create custom shapes by defining a function that transforms the input value to the desired output type. For example:
+
+```ts
+const customShape = (value: ComplexVersion): SerializedComplexVersion => {
+  return `${value.major}.${value.minor}.${value.patch}`;
+};
+
+const complexMapped = mapRecord(complexVersions, customShape);
+console.log(complexMapped);
+```
+
+### `mapRecord`
+
+The `mapRecord` function allows you to transform the values of a record while keeping the keys unchanged. This is particularly useful for mapping simple key-value pairs.
+
+Example:
+
+```ts
+import { mapRecord, stringShape } from 'mapia';
+
+const versions = {
+  react: 18,
+  'react-dom': 18,
+};
+
+const mapped = mapRecord(versions, stringShape);
+console.log(mapped); // { react: '18', 'react-dom': '18' }
+```
+
+### Aliases
+
+Mapia provides several aliases to make your code more concise and readable. These aliases are shorthand for commonly used functions and directives:
+
+Mapping aliases:
+- `mv`: Alias for `rename`.
+- `tr`: Alias for `transform`.
+- `trw`: Alias for `transformWithRename`.
+- `ig`: Alias for `ignore`.
+
+Shape aliases:
+- `nullMM`: Alias for `nullableMapManyShape`.
+- `nullMO`: Alias for `nullableMapOneShape`.
+- `MM`: Alias for `mapManyShape`.
+- `MO`: Alias for `mapOneShape`.
+
+More can be found in the [source code](./src/aliases.ts).
+
+For example:
+
+```ts
+import { mv, tr, ig, numberShape } from 'mapia';
+
+const userMapper = compileMapper<UserResponse, UserEntity>({
+  id: tr(numberShape), // We have a ready field mapper for this
+  name: mv('fullName'),
+  age: 'age',
+  updatedAt: ig(),
+});
+```
+
+### Functional Programming Style
+
+Mapia embraces functional programming principles, allowing you to compose and reuse mappers in a declarative and type-safe manner. This makes your code more modular and easier to maintain.
+
+For example, you can compose mappers for nested structures:
+
+```ts
+const addressMapper = compileMapper<CurrentAddress, Address>({
+  city: 'city',
+  country: 'country',
+});
+
+const addressFieldMapper = transformWithRename(MO(addressMapper));
+
+const userMapper = compileMapper<UserResponse, UserEntity>({
+  fullName: rename('name'),
+  address: addressFieldMapper, // UserResponse has an address property
+  createdAt: transform(nullableShapeFrom(dateDecoder)), // Creating own shape, Date | undefined -> Date | null
+  updatedAt: ig(), // This field will be ignored
+});
+```
 
 ## Why Mapia is Better than AutoMapper-TS
 
