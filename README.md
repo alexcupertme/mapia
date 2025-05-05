@@ -15,15 +15,6 @@ Mapia is a lightweight and type-safe object mapping library for TypeScript. It s
 
 [440207033-048eccc7-a534-4c16-bf04-a8495d5da795](./public/440207033-048eccc7-a534-4c16-bf04-a8495d5da795.mp4 ':include :type=iframe width=100% height=400px')
 
-<style>
-  .docsify-only {
-    display: block;
-  }
-
-  /* GitHub ignores this style block in Markdown, so iframe won't show */
-</style>
-
-
 **Why Mapia?**
 > - 🧙 IDE-friendly auto-mapping
 > - 🪶 Zero dependencies, 80kb unzipped size. Can be used in browsers!
