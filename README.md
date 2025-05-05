@@ -13,13 +13,16 @@ Mapia is a lightweight and type-safe object mapping library for TypeScript. It s
 
 [▶️ Watch demo on YouTube](https://www.youtube.com/watch?v=C8GeUHRRTRw)
 
-<!-- This works in Docsify -->
-<iframe width="100%" height="400"
-  src="https://www.youtube.com/embed/C8GeUHRRTRw"
-  title="YouTube video player" frameborder="0"
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-  allowfullscreen>
-</iframe>
+[440207033-048eccc7-a534-4c16-bf04-a8495d5da795](./public/440207033-048eccc7-a534-4c16-bf04-a8495d5da795.mp4 ':include :type=iframe width=100% height=400px')
+
+<style>
+  .docsify-only {
+    display: block;
+  }
+
+  /* GitHub ignores this style block in Markdown, so iframe won't show */
+</style>
+
 
 **Why Mapia?**
 > - 🧙 IDE-friendly auto-mapping
