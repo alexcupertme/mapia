@@ -9,6 +9,8 @@ import {
   transformWithRename,
 } from "./mapia";
 
+const formatOrderValue = (value: number): string => `formatted-${value}`;
+
 describe("mapia", () => {
   it("should correctly work basic structures", () => {
     type Source = {
@@ -85,6 +87,47 @@ describe("mapia", () => {
     const _assert: AssertEqual<typeof mappedClass, Destination> = true;
 
     expect(mappedClass).toEqual(expected);
+  });
+
+  it("should keep function fields when mapping class instances", () => {
+    class SourceWithFunction {
+      constructor(
+        public name: string,
+        public formatter: (value: number) => string,
+      ) {}
+    }
+
+    class DestinationWithFunction {
+      constructor(
+        public label: string,
+        public format: (value: number) => string,
+      ) {}
+    }
+
+    type SourceShape = Pick<SourceWithFunction, "name" | "formatter">;
+    type DestinationShape = Pick<DestinationWithFunction, "label" | "format">;
+
+    const mapper = compileMapper<SourceShape, DestinationShape>({
+      label: rename("name"),
+      format: rename("formatter"),
+    });
+
+    const mapped = mapper.mapOne(
+      new SourceWithFunction("Order", formatOrderValue),
+    );
+
+    expect(mapped.label).toBe("Order");
+    expect(mapped.format).toBe(formatOrderValue);
+    expect(mapped.format(7)).toBe("formatted-7");
+
+    const mappedClass = new DestinationWithFunction(
+      mapped.label,
+      mapped.format,
+    );
+    const _assert: AssertEqual<typeof mappedClass, DestinationWithFunction> =
+      true;
+
+    expect(mappedClass.format(42)).toBe("formatted-42");
   });
   it("should correctly work with nested structures", () => {
     type Source = {

@@ -4,3 +4,4 @@ dist
 generate_graph.py
 mapia*.tgz
 coverage
+.kilocode
