@@ -1,8 +1,8 @@
 ---
-title: Usage
+title: Objects
 ---
 
-# Usage
+# Mapping objects
 
 Mapia provides four core field directives so you can describe how each output field should be populated.
 
