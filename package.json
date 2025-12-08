@@ -17,6 +17,9 @@
     "run:shape": "ts-node src/shapes.ts",
     "run:example": "ts-node ./examples/index.ts",
     "test": "jest --coverage --detectOpenHandles --forceExit --maxWorkers=2",
+    "docs:dev": "pnpm --filter mapia-docs run dev",
+    "docs:build": "pnpm --filter mapia-docs run build",
+    "docs:serve": "pnpm --filter mapia-docs run serve",
     "semantic-release": "semantic-release"
   },
   "repository": {

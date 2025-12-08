@@ -5,3 +5,6 @@ generate_graph.py
 mapia*.tgz
 coverage
 .kilocode
+
+docs/.vitepress/dist
+docs/.vitepress/cache
