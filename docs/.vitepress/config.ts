@@ -34,6 +34,7 @@ export default defineConfig({
     ["link", { rel: "manifest", href: "/site.webmanifest" }],
     ["meta", { name: "theme-color", content: "#ffffff" }],
   ],
+  base: '/mapia/',
   themeConfig: {
     logo: '/mapia.svg',
     siteTitle: 'Docs',
