@@ -42,6 +42,7 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/' },
       { text: 'Usage', link: '/usage' },
+      { text: 'Enum mapper', link: '/enum-mapper/' },
       { text: 'Advanced', link: '/advanced' },
       { text: 'Benchmark', link: '/benchmark' },
       { text: 'Comparison', link: '/comparison' },
@@ -56,15 +57,17 @@ export default defineConfig({
         ],
       },
       {
-        text: 'Guides',
+        text: 'Usage',
         items: [
-          { text: 'Usage', link: '/usage' },
-          { text: 'Advanced Usage', link: '/advanced' },
-          { text: 'Comparison', link: '/comparison' },
-          { text: 'Benchmark', link: '/benchmark' },
-          { text: 'Contributing', link: '/contributing' },
+          { text: 'Objects', link: '/usage/objects' },
+          { text: 'Enums', link: '/usage/enums' },
+          { text: 'Advanced Usage', link: '/usage/advanced' },
         ],
       },
+      { text: 'Comparison', link: '/comparison' },
+      { text: 'Benchmark', link: '/benchmark' },
+      { text: 'Contributing', link: '/contributing' },
+
     ],
     outline: [2, 3],
     footer: {
