@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/alexcupertme/mapia/compare/v1.2.0...v1.3.0) (2025-12-08)
+
+
+### Features
+
+* **#3:** add enum mapping support ([599003a](https://github.com/alexcupertme/mapia/commit/599003ad256c6f403f65819a4ccdc8f1381f9def)), closes [#3](https://github.com/alexcupertme/mapia/issues/3)
+
 # [1.2.0](https://github.com/alexcupertme/mapia/compare/v1.1.0...v1.2.0) (2025-12-08)
 
 
