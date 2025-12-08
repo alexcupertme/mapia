@@ -28,7 +28,7 @@ export default defineConfig({
     ["meta", { property: "og:url", content: "https://github.com/alexcupertme/mapia" }],
     ["meta", { property: "og:description", content: "Lightweight and type-safe object mapping for TypeScript, with zero dependencies and blazing fast performance." }],
     ["link", { rel: "preconnect", href: "https://cdn.jsdelivr.net", crossorigin: "" }],
-    ["link", { rel: "icon", href: "/favicon.ico" }],
+    ["link", { rel: "icon", href: "/mapia/favicon.ico" }],
     ["link", { rel: "icon", type: "image/png", sizes: "96x96", href: "/mapia/favicon-96x96.png" }],
     ["link", { rel: "icon", href: "/mapia/favicon.svg" }],
     ["link", { rel: "apple-touch-icon", sizes: "180x180", href: "/mapia/apple-touch-icon.png" }],
