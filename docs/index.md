@@ -32,9 +32,10 @@ Mapia is a lightweight, zero-dependency object mapper for TypeScript. It lets yo
 ## Quick links
 
 - [Installation](/installation) – Add Mapia to your project in seconds.
-- [Usage](/usage) – Learn how to define mappers and handle nested structures.
-- [Enum mapper](/enum-mapper/) – Bidirectional enum suffix mapping with compile-time validation.
-- [Advanced](/advanced) – Shape helpers, aliases, and functional composition.
+- Usage
+- - [Working with objects](/usage/objects) – Learn the basics of object mapping.
+- - [Working with enums](/usage/enums) – Map enums with type safety.
+- - [Advanced mappings](/usage/advanced) – Dive into complex scenarios.
 - [Comparison](/comparison) – Why Mapia beats `AutoMapper-TS`.
 - [Benchmark](/benchmark) – See the raw numbers.
 - [Contributing](/contributing) – Help improve the docs or the library.
