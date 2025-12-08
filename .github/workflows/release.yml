@@ -38,6 +38,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Update npm
+        run: npm install -g npm@latest
+
       - name: Semantic release
         run: pnpm semantic-release
         env:
