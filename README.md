@@ -36,7 +36,7 @@ https://alexcupertme.github.io/mapia/
 
 ## Benchmark
 
-![benchmark](benchmark/benchmark.png)
+![benchmark](benchmark/benchmark.svg)
 
 You can run the benchmark yourself with:
 
