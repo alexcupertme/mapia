@@ -1,10 +1,14 @@
 node_modules
 dist
 .vscode
-generate_graph.py
+
 mapia*.tgz
 coverage
 .kilocode
 
 docs/.vitepress/dist
 docs/.vitepress/cache
+
+benchmark/generate_graph.py
+benchmark/generate-graph.ts
+benchmark/stream.ts

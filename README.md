@@ -7,6 +7,9 @@
 
 Mapia is a fast, type-safe object mapper for TypeScript that keeps mappings explicit without imposing runtime dependencies. The mapper infers every field from the source and destination shapes, so you are protected from typos and silent runtime failures.
 
+> [!NOTE]
+> December 2025 update: **Mapia is now faster up to 2000x than Class Transformer and AutoMapper-TS**
+
 ## Quick start
 
 ```bash
@@ -33,7 +36,7 @@ https://alexcupertme.github.io/mapia/
 
 ## Benchmark
 
-![benchmark](benchmark/benchmark.png)
+![benchmark](benchmark/benchmark.svg)
 
 You can run the benchmark yourself with:
 
