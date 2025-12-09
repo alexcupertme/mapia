@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/alexcupertme/mapia/compare/v1.4.0...v1.4.1) (2025-12-09)
+
+
+### Bug Fixes
+
+* add proper sanitize for mapper and dynamic functions ([79bbce3](https://github.com/alexcupertme/mapia/commit/79bbce308e275feab9574e26519690905f0bb0a5))
+
 # [1.4.0](https://github.com/alexcupertme/mapia/compare/v1.3.0...v1.4.0) (2025-12-09)
 
 
