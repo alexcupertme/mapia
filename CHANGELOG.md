@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/alexcupertme/mapia/compare/v1.3.0...v1.4.0) (2025-12-09)
+
+
+### Features
+
+* performance increase using dynamic functions ([50f4370](https://github.com/alexcupertme/mapia/commit/50f43709f0f56596c275f5b56d8b76c8a0683835))
+
 # [1.3.0](https://github.com/alexcupertme/mapia/compare/v1.2.0...v1.3.0) (2025-12-08)
 
 
