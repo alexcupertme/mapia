@@ -27,7 +27,7 @@ Mapia is a lightweight, zero-dependency object mapper for TypeScript. It lets yo
 - 🪶 Zero dependencies, 80 kb unzipped bundle size—suitable for browsers and Node
 - 🧪 Type-safe by default, even with classes, generics, and nested structures
 - 🧼 Minimal configuration and predictable output every time
-- ⚡ **35× faster** than `class-transformer`
+- ⚡ **Up to ~2000× faster** than `class-transformer` and `AutoMapper-TS` in production-level tasks
 
 ## Quick links
 
@@ -42,15 +42,17 @@ Mapia is a lightweight, zero-dependency object mapper for TypeScript. It lets yo
 
 ## Getting started
 
+Try to run this code snippet in your TypeScript project:
+
 ```ts
 import { compileMapper } from 'mapia';
 
 const userMapper = compileMapper<UserResponse, UserEntity>({
-  id: 'id',
-  email: 'email',
+  // id: 'id',
+  // email: 'email',
 });
 
 const entity = userMapper.mapOne({ id: '1', email: 'alex@example.com' });
 ```
 
-When you need to run a full site build, execute `pnpm run docs:build` and deploy the generated assets from `docs/.vitepress/dist` to any CDN or hosting provider. The `docs/.vitepress/public` folder already contains the logo and preview used throughout this site.
+If you using VS Code, press `Ctrl`+`.` inside the mapper definition to see the auto-completion in action! Quick fix "Add missing properties" will suggest all the mappable fields automatically.

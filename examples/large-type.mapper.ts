@@ -201,45 +201,39 @@ import {
   urlOrThrowShape,
 } from "../src";
 
-const authorMapper = compileMapper<
-  ReplaceUndefinedWithNull<AuthorResponse>,
-  AuthorEntity
->({
+const authorMapper = compileMapper<AuthorResponse, AuthorEntity>({
   name: "name",
   email: "email",
   url: transform((x) => (x ? new URL(x) : null)),
 });
 
-const repositoryMapper = compileMapper<
-  ReplaceUndefinedWithNull<RepositoryResponse>,
-  RepositoryEntity
->({
+const repositoryMapper = compileMapper<RepositoryResponse, RepositoryEntity>({
   url: transform((x) => new URL(x)),
   type: transform((x) => x as "git" | "svn" | "mercurial"), // Remember that mapia does not validate fields, so you should make strong endpoint constraints (dto)
 });
 
 const enginesMapper = compileMapper<
-  ReplaceUndefinedWithNull<EnginesEntity>,
+  EnginesResponse,
   EnginesEntity
 >({
-  node: "node",
-  npm: "npm",
-  pnpm: "pnpm",
-  yarn: "yarn",
+  node: tr(nullableShape()),
+  npm: tr(nullableShape()),
+  pnpm: tr(nullableShape()),
+  yarn: tr(nullableShape()),
 });
 
-const bugsMapper = compileMapper<
-  ReplaceUndefinedWithNull<BugsResponse>,
-  BugsEntity
->({
-  email: "email",
+const bugsMapper = compileMapper<BugsResponse, BugsEntity>({
+  email: tr(nullableShape<string>()),
   url: tr(urlOrThrowShape),
 });
 
-const contributorsMapper = compileMapper<
-  ReplaceUndefinedWithNull<ContributorResponse>,
-  ContributorEntity
->({
+const contributorsMapper = compileMapper<ContributorResponse, ContributorEntity>({
+  name: "name",
+  email: "email",
+  url: tr(urlOrNullShape),
+});
+
+const maintainerMapper = compileMapper<MaintainerResponse, ContributorEntity>({
   name: "name",
   email: "email",
   url: tr(urlOrNullShape),
@@ -250,21 +244,15 @@ const fundingMapper = compileMapper<FundingResponse, FundingEntity>({
   url: tr(urlOrThrowShape),
 });
 
-const publishConfig = compileMapper<
-  ReplaceUndefinedWithNull<PublishConfigResponse>,
-  PublishConfigEntity
->({
+const publishConfig = compileMapper<PublishConfigResponse, PublishConfigEntity>({
   registry: tr(urlOrNullShape),
   access: tr(nullableShape()),
 });
 
-const distEntity = compileMapper<
-  ReplaceUndefinedWithNull<DistResponse>,
-  DistEntity
->({
+const distEntity = compileMapper<DistResponse, DistEntity>({
   shasum: "shasum",
   tarball: tr(urlOrThrowShape),
-  integrity: "integrity",
+  integrity: tr(nullableShape<string>()),
 });
 
 /**

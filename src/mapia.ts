@@ -313,84 +313,78 @@ You should always explicitly specify Type Parameters (Source, Destination) if yo
 export function compileMapper<
   Source extends Record<string, any>,
   Destination extends Record<string, any>,
->(mapping: SimpleMapper<Source, Destination>): MapperFns<Source, Destination> {
-  const steps: Array<(source: Source, dest: Destination) => void> = [];
+>(
+  mapping: SimpleMapper<Source, Destination>
+): MapperFns<Source, Destination> {
+  const helperFns: Array<(value: any) => any> = [];
+  const literalAssignments: string[] = [];
 
-  for (const destKey of Object.keys(mapping) as Array<
-    keyof Destination & string
-  >) {
+  for (const destKey of Object.keys(mapping) as Array<keyof Destination & string>) {
     const instruction = mapping[destKey]!;
-
-    if (instruction === undefined)
-      throw new Error(
-        `Instruction at "${destKey}" field in destination is undefined`,
-      );
+    if (instruction === undefined) {
+      throw new Error(`Instruction at "${destKey}" field in destination is undefined`);
+    }
+    const destField = JSON.stringify(destKey);
 
     if (typeof instruction === "string") {
       if (instruction !== destKey) {
         throw new Error(
-          `Direct mapping for destination field "${destKey}" must be "${destKey}", but got "${instruction}".`,
+          `Direct mapping for destination field "${destKey}" must be "${destKey}", but got "${instruction}".`
         );
       }
+      literalAssignments.push(`${destField}: source[${JSON.stringify(instruction)}],`);
+      continue;
+    }
 
-      // direct copy: dest[destKey] = source[instruction]
-      steps.push((source, dest) => {
-        dest[destKey] = source[
-          instruction
-        ] as unknown as Destination[typeof destKey];
-      });
-    } else if ("__kind" in instruction) {
+    if ("__kind" in instruction) {
       switch (instruction.__kind) {
         case "rename":
-          steps.push((source, dest) => {
-            dest[destKey] = source[
-              instruction.src
-            ] as unknown as Destination[typeof destKey];
-          });
+          literalAssignments.push(`${destField}: source[${JSON.stringify(instruction.src)}],`);
           break;
-        case "transform":
+        case "transform": {
+          const helperIndex = helperFns.push(instruction.fn) - 1;
           if (instruction.renamed) {
-            // transform-with-rename: fn(source)
-            steps.push((source, dest) => {
-              dest[destKey] = instruction.fn(source);
-            });
+            literalAssignments.push(`${destField}: helpers[${helperIndex}](source),`);
           } else {
-            // transform-same-key: fn(source[destKey])
-            steps.push((source, dest) => {
-              dest[destKey] = instruction.fn(
-                source[destKey],
-              ) as unknown as Destination[typeof destKey];
-            });
+            literalAssignments.push(`${destField}: helpers[${helperIndex}](source[${destField}]),`);
           }
           break;
+        }
         case "ignore":
-          // no-op
+          // Omit from literal for optional fields
           break;
       }
     }
   }
 
-  // Return the actual mapper function
-  return {
-    mapOne: (source: Source): Destination => {
-      const dest = {} as Destination;
+  // For mapOne
+  const mapOneBody = `return {\n${literalAssignments.join('\n')}\n};`;
+  const mapOneInner = new Function(
+    "source",
+    "helpers",
+    mapOneBody
+  ) as (source: Source, helpers: Array<(value: any) => any>) => Destination;
+  const mapOne: MapOneFn<Source, Destination> = (source) => mapOneInner(source, helperFns);
 
-      for (let i = 0, len = steps.length; i < len; ++i) {
-        steps[i](source, dest);
-      }
-      return dest;
-    },
-    mapMany: (source: Source[]): Destination[] => {
-      return source.map((item) => {
-        const dest = {} as Destination;
+  // For mapMany
+  const mapManyBody = `
+    const results = new Array(input.length);
+    for (let i = 0; i < input.length; ++i) {
+      const source = input[i];
+      results[i] = {
+        ${literalAssignments.join('\n')}
+      };
+    }
+    return results;
+  `;
+  const mapManyInner = new Function(
+    "input",
+    "helpers",
+    mapManyBody
+  ) as (input: Source[], helpers: Array<(value: any) => any>) => Destination[];
+  const mapMany: MapManyFn<Source, Destination> = (input) => mapManyInner(input, helperFns);
 
-        for (let i = 0, len = steps.length; i < len; ++i) {
-          steps[i](item, dest);
-        }
-        return dest;
-      });
-    },
-  };
+  return { mapOne, mapMany };
 }
 
 export function mapRecord<I, O>(

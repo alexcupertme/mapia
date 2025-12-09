@@ -26,11 +26,10 @@ describe("mapia", () => {
     };
 
     const sourceToDestinationMapper = compileMapper<Source, Destination>({
-      fullName: rename("name"),
       age: transform((x: number) => x.toString()),
-      gender: transformWithRename((value) =>
-        value.isMale ? "male" : "female",
+      gender: transformWithRename((value) => value.isMale ? "male" : "female"
       ),
+      fullName: rename('name')
     });
 
     const expected: Destination = {
