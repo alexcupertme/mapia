@@ -1,3 +1,5 @@
+import jsStringEscape from "js-string-escape";
+
 export type AssertEqual<T, Expected> = T extends Expected
   ? Expected extends T
     ? true
@@ -324,7 +326,7 @@ export function compileMapper<
     if (instruction === undefined) {
       throw new Error(`Instruction at "${destKey}" field in destination is undefined`);
     }
-    const destField = JSON.stringify(destKey);
+    const destField = `"${jsStringEscape(destKey)}"`;
 
     if (typeof instruction === "string") {
       if (instruction !== destKey) {
@@ -332,14 +334,14 @@ export function compileMapper<
           `Direct mapping for destination field "${destKey}" must be "${destKey}", but got "${instruction}".`
         );
       }
-      literalAssignments.push(`${destField}: source[${JSON.stringify(instruction)}],`);
+      literalAssignments.push(`${destField}: source["${jsStringEscape(instruction)}"],`);
       continue;
     }
 
     if ("__kind" in instruction) {
       switch (instruction.__kind) {
         case "rename":
-          literalAssignments.push(`${destField}: source[${JSON.stringify(instruction.src)}],`);
+          literalAssignments.push(`${destField}: source["${jsStringEscape(instruction.src)}"],`);
           break;
         case "transform": {
           const helperIndex = helperFns.push(instruction.fn) - 1;
