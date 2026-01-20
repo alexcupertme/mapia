@@ -1,12 +1,12 @@
-<p align="center">
-  <img align="center" src="/mapia.svg" width="200px" alt="Mapia logo svg" />
+<div align="center">
+  <img src="/mapia.svg" width="200px" alt="Mapia logo svg" />
 
-  <h1 align="center">Mapia</h1>
+  <h1 style="padding-top: 10px;">Mapia</h1>
 
-  <p align="center">
+  <p>
     Object transformation library for TypeScript
   </p>
-</p>
+</div>
 
 <div align="center" style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px;">
   <a href="https://opensource.org/licenses/MIT">
