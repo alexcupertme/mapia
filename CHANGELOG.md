@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/alexcupertme/mapia/compare/v1.4.1...v1.5.0) (2026-01-20)
+
+
+### Features
+
+* major object mapping update and fixes ([7f1b696](https://github.com/alexcupertme/mapia/commit/7f1b696408318f2d98c316a797ba4b453265c8ab))
+
 ## [1.4.1](https://github.com/alexcupertme/mapia/compare/v1.4.0...v1.4.1) (2025-12-09)
 
 
