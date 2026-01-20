@@ -1,5 +1,7 @@
 # Mapia
 
+![Logo](./docs/public/mapia.svg)
+
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![TypeScript](https://img.shields.io/badge/language-TypeScript-blue)
 [![Test & Coverage](https://github.com/alexcupertme/mapia/actions/workflows/test.yml/badge.svg)](https://github.com/alexcupertme/mapia/actions/workflows/test.yml)
