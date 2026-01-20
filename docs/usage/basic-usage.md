@@ -6,7 +6,7 @@ title: Objects
 
 This page will walk you through the basics of creating mappings, converting one object to another, and different ways how to make it easier.
 
-You can find complete references for all the functions in the [Defining mappings](/defining-mappings).
+You can find complete references for all the functions in the [Defining mappings](/usage/defining-mappings).
 
 ## Battle plan
 
