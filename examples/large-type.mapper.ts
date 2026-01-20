@@ -1,4 +1,10 @@
-// Split the nested types into separate types with the postfix "Response"
+import {
+  tr,
+  urlOrNullShape,
+  urlOrThrowShape,
+} from "../src";
+import { map, compileMapper, transform, rename, nullableMap } from "../src/index";
+import { deepCastTypes, DeepCastTypes } from "../src/index";
 
 type AuthorResponse = {
   name: string;
@@ -78,10 +84,6 @@ type PackageRegistryEntryResponse = {
   notifications: boolean;
   safeMode: boolean;
 };
-
-/* ================== */
-
-// Updated the `PackageRegistryEntity` model to use `X | null` for optional fields
 
 type AuthorEntity = {
   name: string;
@@ -164,96 +166,7 @@ type PackageRegistryEntryEntity = {
   safeMode: boolean;
 };
 
-type ReplaceUndefinedWithNull<T> = {
-  [K in keyof T]-?: undefined extends T[K]
-    ? Exclude<T[K], undefined> | null
-    : T[K];
-};
-
-// Function to replace `undefined` with `null` in a type-safe manner for shallow properties
-function replaceUndefinedWithNull<T>(obj: T): ReplaceUndefinedWithNull<T> {
-  const result: Partial<{ [K in keyof T]: Exclude<T[K], undefined> | null }> =
-    {};
-
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      const value = obj[key];
-      result[key] =
-        value === undefined
-          ? null
-          : (value as Exclude<T[typeof key], undefined>);
-    }
-  }
-
-  return result as ReplaceUndefinedWithNull<T>;
-}
-
-import {
-  compileMapper,
-  MO,
-  mv,
-  nullableShape,
-  nullMM,
-  nullMO,
-  tr,
-  transform,
-  urlOrNullShape,
-  urlOrThrowShape,
-} from "../src";
-
-const authorMapper = compileMapper<AuthorResponse, AuthorEntity>({
-  name: "name",
-  email: "email",
-  url: transform((x) => (x ? new URL(x) : null)),
-});
-
-const repositoryMapper = compileMapper<RepositoryResponse, RepositoryEntity>({
-  url: transform((x) => new URL(x)),
-  type: transform((x) => x as "git" | "svn" | "mercurial"), // Remember that mapia does not validate fields, so you should make strong endpoint constraints (dto)
-});
-
-const enginesMapper = compileMapper<
-  EnginesResponse,
-  EnginesEntity
->({
-  node: tr(nullableShape()),
-  npm: tr(nullableShape()),
-  pnpm: tr(nullableShape()),
-  yarn: tr(nullableShape()),
-});
-
-const bugsMapper = compileMapper<BugsResponse, BugsEntity>({
-  email: tr(nullableShape<string>()),
-  url: tr(urlOrThrowShape),
-});
-
-const contributorsMapper = compileMapper<ContributorResponse, ContributorEntity>({
-  name: "name",
-  email: "email",
-  url: tr(urlOrNullShape),
-});
-
-const maintainerMapper = compileMapper<MaintainerResponse, ContributorEntity>({
-  name: "name",
-  email: "email",
-  url: tr(urlOrNullShape),
-});
-
-const fundingMapper = compileMapper<FundingResponse, FundingEntity>({
-  type: "type",
-  url: tr(urlOrThrowShape),
-});
-
-const publishConfig = compileMapper<PublishConfigResponse, PublishConfigEntity>({
-  registry: tr(urlOrNullShape),
-  access: tr(nullableShape()),
-});
-
-const distEntity = compileMapper<DistResponse, DistEntity>({
-  shasum: "shasum",
-  tarball: tr(urlOrThrowShape),
-  integrity: tr(nullableShape<string>()),
-});
+type OK_PackageRegistryEntryResponse = DeepCastTypes<PackageRegistryEntryResponse, undefined, null>
 
 /**
  * Here we using aliases to make the code more readable
@@ -262,7 +175,7 @@ const distEntity = compileMapper<DistResponse, DistEntity>({
  * More about them https://github.com/alexcupertme/mapia/blob/main/READNE.md#Aliases
  */
 const packageRegistryFromResponseToEntity = compileMapper<
-  PackageRegistryEntryResponse,
+  OK_PackageRegistryEntryResponse,
   PackageRegistryEntryEntity
 >({
   name: "name",
@@ -270,26 +183,54 @@ const packageRegistryFromResponseToEntity = compileMapper<
   license: "license",
   keywords: "keywords",
   scripts: "scripts",
-  private: tr(nullableShape()),
-  readme: tr(nullableShape()),
+  private: 'private',
+  readme: 'readme',
   homepage: tr(urlOrNullShape),
   version: "version",
-  author: tr(MO(authorMapper)),
-  repository: tr(MO(repositoryMapper)),
+  author: map({
+    name: "name",
+    email: "email",
+    url: tr(urlOrNullShape),
+  }),
+  repository: map({
+    url: tr(urlOrThrowShape),
+    type: 'type',
+  }),
   dependencies: "dependencies",
-  devDependencies: tr(nullableShape()),
-  peerDependencies: tr(nullableShape()),
-  optionalDependencies: tr(nullableShape()),
-  engines: tr(nullMO(enginesMapper)),
-  bugs: tr(nullMO(bugsMapper)),
-  contributors: tr(nullMM(contributorsMapper)),
-  funding: tr(nullMO(fundingMapper)),
-  publishConfig: tr(nullMO(publishConfig)),
-  maintainers: tr(nullMM(contributorsMapper)),
-  dist: tr(nullMO(distEntity)),
-  hasTwoFactorAuth: mv("twoFactor"),
-  enabledNotifications: mv("notifications"),
-  safeMode: mv("safeMode"),
+  devDependencies: 'devDependencies',
+  peerDependencies: 'peerDependencies',
+  optionalDependencies: 'optionalDependencies',
+  engines: 'engines',
+  bugs: nullableMap({
+    email: 'email',
+    url: tr(urlOrThrowShape),
+  }),
+  funding: nullableMap({
+    url: tr(urlOrThrowShape),
+    type: "type"
+  }),
+  dist: nullableMap({
+    tarball: tr(urlOrThrowShape),
+    integrity: 'integrity',
+    shasum: "shasum"
+  }),
+  hasTwoFactorAuth: rename("twoFactor"),
+  enabledNotifications: rename("notifications"),
+  safeMode: 'safeMode',
+  contributors: nullableMap({
+    name: "name",
+    email: "email",
+    url: tr(urlOrNullShape),
+  }),
+  publishConfig: nullableMap({
+    access: "access",
+    registry: tr(urlOrNullShape),
+  }),
+  maintainers: nullableMap({
+    name: "name",
+    email: "email",
+    url: tr(urlOrNullShape),
+  }),
 });
 
 const packageRegistryResponse: PackageRegistryEntryResponse = {
@@ -349,7 +290,6 @@ const packageRegistryResponse: PackageRegistryEntryResponse = {
     access: "public",
   },
   readme: "This is an example package.",
-  maintainers: [],
   twoFactor: true,
   notifications: true,
   safeMode: true,
@@ -362,5 +302,5 @@ const packageRegistryResponse: PackageRegistryEntryResponse = {
 };
 
 console.log(
-  packageRegistryFromResponseToEntity.mapOne(packageRegistryResponse)
+  packageRegistryFromResponseToEntity.mapOne(deepCastTypes(packageRegistryResponse, 'undefined', 'null'))
 );

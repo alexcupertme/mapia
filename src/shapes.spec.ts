@@ -12,6 +12,7 @@ import {
   nullableShape,
   nullableShapeFrom,
   numberShape,
+  optionalShape,
   stringDecoder,
   stringShape,
   urlDecoder,
@@ -199,6 +200,28 @@ describe("shapes", () => {
       ]);
     });
   });
+
+  describe("optionalShape", () => {
+    it("should return undefined for null input", () => {
+      const shape = optionalShape<string>();
+
+      expect(shape(null)).toBeUndefined();
+    });
+
+    it("should return undefined for undefined input", () => {
+      const shape = optionalShape<number>();
+
+      // eslint-disable-next-line unicorn/no-useless-undefined
+      expect(shape(undefined)).toBeUndefined();
+    });
+
+    it("should return the value for non-null input", () => {
+      const shape = optionalShape<string>();
+
+      expect(shape("hello")).toBe("hello");
+    });
+  });
+
 
   describe("leftToUndefined", () => {
     it("should return undefined for invalid input", () => {

@@ -25,23 +25,23 @@ export const stringDecoder: SafeDecoder<
 
 export const anyDecoderWrap =
   <T>(): SafeDecoder<T, T> =>
-  // eslint-disable-next-line unicorn/consistent-function-scoping
-  (x) =>
-    right(x);
+    // eslint-disable-next-line unicorn/consistent-function-scoping
+    (x) =>
+      right(x);
 
 export const mapOneDecoder =
   <I extends Record<string, any>, O extends Record<string, any>>(
     mapper: MapperFns<I, O>,
   ): SafeDecoder<I, O> =>
-  (x) =>
-    right(mapper.mapOne(x));
+    (x) =>
+      right(mapper.mapOne(x));
 
 export const mapManyDecoder =
   <I extends Record<string, any>, O extends Record<string, any>>(
     mapper: MapperFns<I, O>,
   ): SafeDecoder<I[], O[]> =>
-  (x) =>
-    right(mapper.mapMany(x));
+    (x) =>
+      right(mapper.mapMany(x));
 
 export const urlDecoder: Decoder<string, URL> = (
   x: string,
@@ -70,48 +70,48 @@ export function composeDecoder<I, A, B>(
 /** Turn `u: U | null | undefined` into `U | null` */
 export const tryNonNullable =
   <T>(): Decoder<T | null | undefined, T> =>
-  // eslint-disable-next-line unicorn/consistent-function-scoping
-  <U>(u: U | null | undefined): Either<Error, U> =>
-    u == null ? left(new Error("Null value found")) : right(u);
+    // eslint-disable-next-line unicorn/consistent-function-scoping
+    <U>(u: U | null | undefined): Either<Error, U> =>
+      u == null ? left(new Error("Null value found")) : right(u);
 
 export const leftToDefault =
   <I, O>(shape: Decoder<I, O>, defaultValue: O): ((input: I) => O) =>
-  (i) =>
-    foldEither(
-      shape(i),
-      () => defaultValue,
-      (v) => v,
-    );
+    (i) =>
+      foldEither(
+        shape(i),
+        () => defaultValue,
+        (v) => v,
+      );
 
 export const leftToNull =
   <I, O>(shape: Decoder<I, O>): ((input: I) => O | null) =>
-  (i) =>
-    foldEither(
-      shape(i),
-      () => null,
-      (v) => v,
-    );
+    (i) =>
+      foldEither(
+        shape(i),
+        () => null,
+        (v) => v,
+      );
 
 export const leftToUndefined =
   <I, O>(shape: Decoder<I, O>): ((input: I) => O | undefined) =>
-  (i) =>
-    foldEither(
-      shape(i),
-      // eslint-disable-next-line unicorn/no-useless-undefined
-      () => undefined,
-      (v) => v,
-    );
+    (i) =>
+      foldEither(
+        shape(i),
+        // eslint-disable-next-line unicorn/no-useless-undefined
+        () => undefined,
+        (v) => v,
+      );
 
 export const leftToToThrow =
   <I, O>(shape: Decoder<I, O>): ((input: I) => O) =>
-  (i) =>
-    foldEither(
-      shape(i),
-      (e) => {
-        throw e;
-      },
-      (v) => v,
-    );
+    (i) =>
+      foldEither(
+        shape(i),
+        (e) => {
+          throw e;
+        },
+        (v) => v,
+      );
 
 /**
  * Converts a value to a string
@@ -170,13 +170,18 @@ export const urlOrDefaultShape = (defaultValue: URL): ((x: string) => URL) =>
  */
 export const nullableShape =
   <T>() =>
-  (x: T | null | undefined): T | null =>
-    leftToNull(composeDecoder(tryNonNullable<T>(), anyDecoderWrap<T>()))(x);
+    (x: T | null | undefined): T | null =>
+      leftToNull(composeDecoder(tryNonNullable<T>(), anyDecoderWrap<T>()))(x);
+
+export const optionalShape =
+  <T>() =>
+    (x: T | null | undefined): T | undefined =>
+      leftToUndefined(composeDecoder(tryNonNullable<T>(), anyDecoderWrap<T>()))(x);
 
 export const nullableShapeFrom =
   <I, O>(decoder: Decoder<I, O>) =>
-  (x: I | null | undefined): O | null =>
-    leftToNull(composeDecoder(tryNonNullable<I>(), decoder))(x);
+    (x: I | null | undefined): O | null =>
+      leftToNull(composeDecoder(tryNonNullable<I>(), decoder))(x);
 
 /*
  * Maps an input object to an output object using the provided mapper function.
@@ -187,8 +192,8 @@ export const mapOneShape =
   <I extends Record<string, any>, O extends Record<string, any>>(
     mapper: MapperFns<I, O>,
   ) =>
-  (x: I): O =>
-    mapOneDecoder(mapper)(x).value;
+    (x: I): O =>
+      mapOneDecoder(mapper)(x).value;
 
 /**
  * Maps an array of input objects to an array of output objects using the provided mapper function.
@@ -199,8 +204,8 @@ export const mapManyShape =
   <I extends Record<string, any>, O extends Record<string, any>>(
     mapper: MapperFns<I, O>,
   ) =>
-  (x: I[]): O[] =>
-    mapManyDecoder(mapper)(x).value;
+    (x: I[]): O[] =>
+      mapManyDecoder(mapper)(x).value;
 
 /**
  * Maps a nullable input to a nullable output using the provided mapper function.
@@ -211,8 +216,8 @@ export const nullableMapManyShape =
   <I extends Record<string, any>, O extends Record<string, any>>(
     mapper: MapperFns<I, O>,
   ) =>
-  (x: I[] | null | undefined): O[] | null =>
-    nullableShapeFrom(mapManyDecoder(mapper))(x);
+    (x: I[] | null | undefined): O[] | null =>
+      nullableShapeFrom(mapManyDecoder(mapper))(x);
 
 /**
  * Maps a nullable input to a nullable output using the provided mapper function.
@@ -223,8 +228,8 @@ export const nullableMapOneShape =
   <I extends Record<string, any>, O extends Record<string, any>>(
     mapper: MapperFns<I, O>,
   ) =>
-  (x: I | null | undefined): O | null =>
-    nullableShapeFrom(mapOneDecoder(mapper))(x);
+    (x: I | null | undefined): O | null =>
+      nullableShapeFrom(mapOneDecoder(mapper))(x);
 
 /**
  * Alias for `nullableShape` function

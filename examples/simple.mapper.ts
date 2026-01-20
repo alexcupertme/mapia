@@ -19,7 +19,7 @@ type EmailLetterRequest = {
 const emailLetterMapper = compileMapper<EmailLetterRequest, EmailLetterDto>({
   subject: "subject",
   body: rename('payload'),
-  recipient: "recipient",
+  recipient: 'recipient',
   sender: "sender",
   sentAt: transform(nullableShapeFrom(dateDecoder)),
 });

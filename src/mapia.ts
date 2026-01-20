@@ -1,68 +1,40 @@
 import jsStringEscape from "js-string-escape";
 
-export type AssertEqual<T, Expected> = T extends Expected
-  ? Expected extends T
-    ? true
-    : never
-  : never;
+type HasUndefined<T> = undefined extends T ? true : false;
+type HasNull<T> = null extends T ? true : false;
+type HasNullish<T> = HasNull<T> extends true
+  ? true
+  : HasUndefined<T>;
 
-// Helper type: check for exact type equality.
-export type IsExact<T, U> =
-  (<G>() => G extends T ? 1 : 2) extends <G>() => G extends U ? 1 : 2
-    ? // second check: U behaves like T
-      (<G>() => G extends U ? 1 : 2) extends <G>() => G extends T ? 1 : 2
-      ? true
-      : false
-    : false;
+type RenameSourcePath = string;
+type LocalPath<SrcPath extends string> = SrcPath extends `source.${string}`
+  ? never
+  : SrcPath;
 
-/*────────────────────────────────────────────────────────────────────────────
-  Mapping Directives (destination‐key based)
-────────────────────────────────────────────────────────────────────────────*/
-
-// Rename directive: the value comes from a source field.
-export interface RenameDirective<SrcKey extends string> {
+export interface RenameDirective<SrcPath extends RenameSourcePath> {
   __kind: "rename";
-  src: SrcKey;
+  src: SrcPath;
 }
 
-/**
- * Rename directive: used to rename a source key to a destination key.
- * This is useful when the source key does not match the destination key.
- * But field types must match.
- *
- * @param src - Pick a source key that will be renamed to the destination key.
- *
- * @example
- * ```ts
- * type Source = {
- * ⠀⠀fullName: string;
- * ⠀⠀age: number;
- * ⠀⠀email: string;
- * };
- *
- * type Destination = {
- * ⠀⠀name: string;
- * ⠀⠀age: number;
- * ⠀⠀email: string;
- * };
- *
- * const mapping = compileMapper<Source, Destination>({
- *   name: rename("fullName"), // ✅ Maps "fullName" from source to "name" in destination
- *   age: "age", // Maps "age" from source to "age" in destination
- * ⠀⠀email: rename("email"), // ❌ Throws compile time error. No redundant rename
- * });
- * ```
- */
-export function rename<SrcKey extends string>(
-  src: SrcKey,
-): RenameDirective<SrcKey> {
+export function rename<const SrcPath extends RenameSourcePath>(
+  src: LocalPath<SrcPath>,
+): RenameDirective<SrcPath> {
   return { __kind: "rename", src };
 }
 
-// Transform directive interfaces:
+type GlobalRenameSourcePath = `source.${string}`;
 
-// 1. TransformDirectiveSame: used when the source key is the same as the destination key.
-//    (Now we omit the key since it’s implied by the mapping config property.)
+export interface GlobalRenameDirective<SrcPath extends GlobalRenameSourcePath> {
+  __kind: "globalRename";
+  src: SrcPath;
+}
+
+export function globalRename<const SrcPath extends GlobalRenameSourcePath>(
+  src: SrcPath,
+): GlobalRenameDirective<SrcPath> {
+  return { __kind: "globalRename", src };
+}
+
 export interface TransformDirectiveSame<
   Source extends Record<string, any>,
   _D extends keyof Source,
@@ -73,8 +45,6 @@ export interface TransformDirectiveSame<
   renamed: false;
 }
 
-// 2. TransformDirectiveRenamed: used when the source key differs from the destination key.
-//    The transform function now receives the entire source object.
 export interface TransformDirectiveRenamed<
   Source extends Record<string, any>,
   F extends (source: Source) => any,
@@ -83,38 +53,33 @@ export interface TransformDirectiveRenamed<
   fn: F;
   renamed: true;
 }
+export interface MapDirective<
+  Source extends Record<string, any>,
+  Destination extends Record<string, any>,
+  RootSource extends Record<string, any> = Source,
+> {
+  __kind: "map";
+  mapper: MapperFns<Source, Destination, RootSource>;
+  config?: SimpleMapper<Source, Destination, RootSource>;
+}
 
-/**
- * Transform directive: used to change type of a source field.
- *
- * Source and Destination field name must match.
- *
- * But field types doesn't.
- *
- * Note that you cannot misspell the destination key
- *
- * @param fn - The function to transform the value.
- *
- * @example
- * ```ts
- * type Source = {
- * ⠀⠀id: string;
- * ⠀⠀age: number;
- * ⠀⠀name: string;
- * };
- *
- * type Destination = {
- * ⠀⠀id: number;
- * ⠀⠀age: number;
- * ⠀⠀name: string;
- * };
- *
- * const mapping = compileMapper<Source, Destination>({
- *   id: transform((x) => Number(x)), // ✅ Maps "id" from source to "id" in destination
- *   age: "age",
- *   name: "name",
- * });
- */
+type NoInfer<T> = [T][T extends any ? 0 : never];
+
+export function map<
+  Source extends Record<string, any>,
+  Destination extends Record<string, any>,
+  RootSource extends Record<string, any>,
+>(
+  mapping: SimpleMapper<Source, Destination, RootSource>
+): MapDirective<Source, Destination, RootSource> {
+  return {
+    __kind: "map",
+    config: mapping,
+    mapper: compileMapper<Source, Destination, RootSource>(mapping),
+  };
+}
+
+
 export function transform<
   Source extends Record<string, any>,
   D extends keyof Source,
@@ -125,50 +90,12 @@ export function transform<
   return { __kind: "transform", fn, renamed: false };
 }
 
-/**
- * Transform directive: used to change full shape of a source object.
- *
- * Neither field name nor type should match.
- *
- * That’s why we explicitly have this method to be sure that we need renaming and transforming.
- *
- * @param fn - The function to transform the value.
- *
- * @example
- * ```ts
- * type Source = {
- * ⠀⠀id: string;
- * ⠀⠀age: number;
- * ⠀⠀name: string;
- * };
- *
- * // Super-complex type
- * type Tag = {
- * ⠀⠀type: 'name';
- * ⠀⠀value: string;
- * };
- *
- * type Destination = {
- * ⠀⠀id: number;
- * ⠀⠀age: number;
- * ⠀⠀tags: Tag[] // Super-complex type
- * };
- *
- * const mapping = compileMapper<Source, Destination>({
- * ⠀⠀id: transform((x) => Number(x)),
- * ⠀⠀age: "age",
- * ⠀⠀tags: transformWithRename((x) => (
- * ⠀⠀⠀⠀[{type: 'name'; value: x}])
- * ⠀⠀)), // ✅ Maps "name" from source to "tags" in destination
- * });
- */
 export function transformWithRename<Source extends Record<string, any>, T>(
   fn: (source: Source) => T,
 ): TransformDirectiveRenamed<Source, (source: Source) => T> {
   return { __kind: "transform", fn, renamed: true };
 }
 
-// An ignore directive: indicates that the destination field should be left unset.
 export interface IgnoreDirective {
   __kind: "ignore";
 }
@@ -176,203 +103,736 @@ export function ignore(): IgnoreDirective {
   return { __kind: "ignore" };
 }
 
-type Keys<T> = Extract<keyof T, string>;
+type Primitive =
+  | string | number | boolean | bigint | symbol | null | undefined
+  | Date | RegExp | Function;
 
-export type MatchingKeys<
-  Source,
-  Destination,
-  DestKey extends keyof Destination,
-> = {
-  [P in Keys<Source>]: IsExact<Source[P], Destination[DestKey]> extends true
-    ? P
-    : never;
-}[Keys<Source>];
+type IsPlainObject<T> =
+  T extends object
+  ? T extends readonly any[] ? false
+  : T extends Primitive ? false
+  : true
+  : false;
 
-/*────────────────────────────────────────────────────────────────────────────
-  Mapping Configuration Type
-────────────────────────────────────────────────────────────────────────────*/
+type PathIndex<
+  S,
+  Prefix extends string = ""
+> =
+  S extends object
+  ? {
+    [K in Extract<keyof S, string>]:
+    | { path: `${Prefix}${K}`; value: S[K] }
+    | (IsPlainObject<StripNullish<S[K]>> extends true
+      ? PathIndex<S[K], `${Prefix}${K}.`>
+      : never)
+  }[Extract<keyof S, string>]
+  : never;
+
+type PathValue<T, P extends string> =
+  P extends `${infer K}.${infer Rest}`
+  ? K extends keyof T
+  ? PathValue<T[K], Rest>
+  : never
+  : P extends keyof T
+  ? T[P]
+  : never;
+
+type ObjectAtPath<T, P extends string> =
+  ExtractObjectField<Exclude<PathValue<T, P>, null | undefined>>;
+
+type IsExact<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends
+  (<T>() => T extends B ? 1 : 2)
+  ? (<T>() => T extends B ? 1 : 2) extends
+  (<T>() => T extends A ? 1 : 2)
+  ? true
+  : false
+  : false;
+
+type MatchingPathsFromIndex<Idx, V> =
+  Idx extends { path: infer P extends string; value: infer T }
+  ? IsExact<T, V> extends true ? P : never
+  : never;
+
+type IfNever<T, Y, N> = [T] extends [never] ? Y : N;
+
+type LocalRenameFor<DVal, Idx> =
+  IfNever<
+    MatchingPathsFromIndex<Idx, DVal>,
+    never,
+    RenameDirective<MatchingPathsFromIndex<Idx, DVal> & string>
+  >;
+
+type GlobalRenameFor<DVal, RootIdx> =
+  IfNever<
+    MatchingPathsFromIndex<RootIdx, DVal>,
+    never,
+    GlobalRenameDirective<`source.${MatchingPathsFromIndex<RootIdx, DVal> & string}`>
+  >;
+type PathsFromIndex<Idx> =
+  Idx extends { path: infer P extends string } ? P : never;
+
+type ValueAtPathFromIndex<Idx, P extends string> =
+  Extract<Idx, { path: P }> extends { value: infer V } ? V : never;
+
+type ObjectishPathsFromIndex<Idx> =
+  PathsFromIndex<Idx> extends infer P
+  ? P extends string
+  ? ExtractObjectField<StripNullish<ValueAtPathFromIndex<Idx, P>>> extends never
+  ? never
+  : P
+  : never
+  : never;
+
+type ObjectishPaths<RootSource extends Record<string, any>> =
+  ObjectishPathsFromIndex<PathIndex<RootSource, "">>;
+
+
+export interface NullableMapFromDirective<
+  RootSource extends Record<string, any>,
+  SrcPath extends string,
+  Destination extends Record<string, any>,
+> {
+  __kind: "nullableMapFrom";
+  src: SrcPath;
+  mapper: MapperFns<any, Destination, RootSource>;
+  config?: SimpleMapper<any, Destination, RootSource>;
+}
+
+
+export function nullableMapFrom<
+  RootSource extends Record<string, any>,
+  SrcPath extends ObjectishPaths<RootSource>,
+  Destination extends Record<string, any>,
+  SrcObj extends Record<string, any> = ObjectAtPath<RootSource, SrcPath>,
+>(
+  src: SrcPath,
+  mapping: SimpleMapper<SrcObj, Destination, RootSource>,
+): NullableMapFromDirective<RootSource, SrcPath, Destination> {
+  return {
+    __kind: "nullableMapFrom",
+    src,
+    config: mapping as SimpleMapper<any, Destination, RootSource>,
+    mapper: compileMapper<SrcObj, Destination, RootSource>(mapping),
+  };
+}
+
+export interface OptionalMapFromDirective<
+  RootSource extends Record<string, any>,
+  SrcPath extends string,
+  Destination extends Record<string, any>,
+> {
+  __kind: "optionalMapFrom";
+  src: SrcPath;
+  mapper: MapperFns<any, Destination, RootSource>;
+  config?: SimpleMapper<any, Destination, RootSource>;
+}
+
+
+export function optionalMapFrom<
+  RootSource extends Record<string, any>,
+  SrcPath extends ObjectishPaths<RootSource>,
+  Destination extends Record<string, any>,
+  SrcObj extends Record<string, any> = ObjectAtPath<RootSource, SrcPath>,
+>(
+  src: SrcPath,
+  mapping: SimpleMapper<SrcObj, Destination, RootSource>,
+): OptionalMapFromDirective<RootSource, SrcPath, Destination> {
+  return {
+    __kind: "optionalMapFrom",
+    src,
+    config: mapping as SimpleMapper<any, Destination, RootSource>,
+    mapper: compileMapper<SrcObj, Destination, RootSource>(mapping),
+  };
+}
+
+type ExtractObjectField<T> = T extends Record<string, any>
+  ? T extends readonly any[]
+  ? never
+  : T
+  : never;
+
+type Nullish = null | undefined;
+
+type PlainObject = Record<string, any>;
+type StripNullish<T> = Exclude<T, Nullish>;
+
+type ProducedObject<T> = ExtractObjectField<StripNullish<T>>;
+
+export interface FlatMapAfterDirective<
+  RootSource extends PlainObject,
+  Destination extends PlainObject,
+> {
+  __kind: "flatMapAfter";
+  fn: (root: RootSource) => any;
+  mapper: MapperFns<any, Destination, RootSource>;
+  config?: unknown;
+}
+
+export function flatMapAfter<
+  F extends (root: any) => any,
+  RootSource extends PlainObject = Parameters<F>[0] & PlainObject,
+  ProducedObj extends PlainObject = ProducedObject<ReturnType<F>>,
+>(fn: F) {
+  return function <Destination extends PlainObject>(
+    mapping: NoInfer<SimpleMapper<ProducedObj, Destination, RootSource>>,
+  ): FlatMapAfterDirective<RootSource, Destination> {
+    return {
+      __kind: "flatMapAfter",
+      fn: fn as any,
+      config: mapping,
+      mapper: compileMapper<any, Destination, RootSource>(mapping as any),
+    };
+  };
+}
+
+export interface FlatMapDirective<
+  RootSource extends Record<string, any>,
+  Destination extends Record<string, any>
+> {
+  __kind: "flatMap";
+  mapper: MapperFns<RootSource, Destination, RootSource>;
+  config?: SimpleMapper<RootSource, Destination, RootSource>;
+  __types?: (s: RootSource, d: Destination, r: RootSource) => void;
+}
+
+export function flatMap<
+  RootSource extends Record<string, any>,
+  Destination extends Record<string, any>,
+>(
+  mapping: SimpleMapper<RootSource, Destination, RootSource>
+): FlatMapDirective<RootSource, Destination> {
+  return {
+    __kind: "flatMap",
+    config: mapping,
+    mapper: compileMapper<RootSource, Destination, RootSource>(mapping),
+  };
+}
+
+export interface NullableMapDirective<
+  Source extends Record<string, any>,
+  Destination extends Record<string, any>,
+  RootSource extends Record<string, any> = Source,
+> {
+  __kind: "nullableMap";
+  mapper: MapperFns<Source, Destination, RootSource>;
+  config?: SimpleMapper<Source, Destination, RootSource>;
+}
+
+export interface OptionalMapDirective<
+  Source extends Record<string, any>,
+  Destination extends Record<string, any>,
+  RootSource extends Record<string, any> = Source,
+> {
+  __kind: "optionalMap";
+  mapper: MapperFns<Source, Destination, RootSource>;
+  config?: SimpleMapper<Source, Destination, RootSource>;
+}
+
+export function nullableMap<
+  Source extends Record<string, any>,
+  Destination extends Record<string, any>,
+  RootSource extends Record<string, any>,
+>(
+  mapping: SimpleMapper<Source, Destination, RootSource>
+): NullableMapDirective<Source, Destination, RootSource> {
+  return {
+    __kind: "nullableMap",
+    config: mapping,
+    mapper: compileMapper<Source, Destination, RootSource>(mapping),
+  };
+}
+
+export function optionalMap<
+  Source extends Record<string, any>,
+  Destination extends Record<string, any>,
+  RootSource extends Record<string, any>,
+>(
+  mapping: SimpleMapper<Source, Destination, RootSource>
+): OptionalMapDirective<Source, Destination, RootSource> {
+  return {
+    __kind: "optionalMap",
+    config: mapping,
+    mapper: compileMapper<Source, Destination, RootSource>(mapping),
+  };
+}
+
+
+type ArrayElement<T> = T extends readonly (infer U)[] ? U : never;
+
+
+// See: https://github.com/microsoft/TypeScript/issues/28545
+type DestVal<
+  Destination extends Record<string, any>,
+  D extends keyof Destination & string
+> = Destination[D];
+
+type ObjOrNever<T> = ExtractObjectField<StripNullish<T>>;
 
 export type MapMatchingKeys<
   Source extends Record<string, any>,
   Destination extends Record<string, any>,
+  RootSource extends Record<string, any> = Source,
+  SrcIdx extends PathIndex<Source, ""> = PathIndex<Source, "">,
+  RootIdx extends PathIndex<RootSource, ""> = PathIndex<RootSource, "">,
 > = Partial<{
-  [D in keyof Destination & string]:  // Direct mapping branch.
-    | (D extends keyof Source
-        ? IsExact<Source[D], Destination[D]> extends true
-          ? D
-          : never
-        : never)
+  [D in keyof Destination & string]-?:
+  | (D extends keyof Source
+    ? (IsExact<Source[D], DestVal<Destination, D>> extends true ? D : never)
+    : never)
+  | (D extends keyof Source
+    ? (IsExact<Source[D], DestVal<Destination, D>> extends true
+      ? never
+      : (
+        | LocalRenameFor<DestVal<Destination, D>, SrcIdx>
+        | GlobalRenameFor<DestVal<Destination, D>, RootIdx>
 
-    // Rename branch.
-    | {
-        [K in Keys<Source>]: RenameDirective<K> & {
-          _check?: D extends keyof Source
-            ? IsExact<Source[K], Destination[D]> extends true
-              ? true
-              : never
-            : never;
-        };
-      }[MatchingKeys<Source, Destination, D>]
-
-    // Transform branch (same): allowed if D is in Source.
-    | (D extends keyof Source
-        ? TransformDirectiveSame<
-            Source,
-            D,
-            (value: Source[D]) => Destination[D]
-          >
-        : never)
-
-    // Transform branch (renamed): for destination keys that don’t exist on Source.
-    | {
-        [K in Exclude<
-          Extract<keyof Source, string>,
-          D
-        >]: TransformDirectiveRenamed<
+        | TransformDirectiveSame<
           Source,
-          (source: Source) => Destination[D]
-        >;
-      }[Exclude<Extract<keyof Source, string>, D>]
+          D,
+          (v: Source[D]) => DestVal<Destination, D>
+        >
 
-    // Ignore branch.
-    | (undefined extends Destination[D] ? IgnoreDirective : never);
+        | TransformDirectiveRenamed<
+          Source,
+          (s: Source) => DestVal<Destination, D>
+        >
+
+        | (
+          D extends keyof Source
+          ? ExtractObjectField<Destination[D]> extends never
+          ? never
+          : ExtractObjectField<Source[D]> extends never
+          ? never
+          : HasNull<Destination[D]> extends true
+          ? NullableMapDirective<
+            ExtractObjectField<StripNullish<Source[D]>>,
+            ExtractObjectField<StripNullish<Destination[D]>>,
+            RootSource
+          >
+          : HasUndefined<Destination[D]> extends true
+          ? OptionalMapDirective<
+            ExtractObjectField<StripNullish<Source[D]>>,
+            ExtractObjectField<StripNullish<Destination[D]>>,
+            RootSource
+          >
+          : MapDirective<
+            ExtractObjectField<Source[D]>,
+            ExtractObjectField<Destination[D]>,
+            RootSource
+          >
+          : never
+        )
+
+        | (StripNullish<Source[D]> extends readonly any[]
+          ? StripNullish<DestVal<Destination, D>> extends readonly any[]
+          ? ExtractObjectField<ArrayElement<StripNullish<Source[D]>>> extends infer SE
+          ? ExtractObjectField<ArrayElement<StripNullish<DestVal<Destination, D>>>> extends infer DE
+          ? SE extends Record<string, any>
+          ? DE extends Record<string, any>
+          ? HasNull<DestVal<Destination, D>> extends true
+          ? NullableMapDirective<SE, DE, RootSource>
+          : HasUndefined<DestVal<Destination, D>> extends true
+          ? OptionalMapDirective<SE, DE, RootSource>
+          : MapDirective<SE, DE, RootSource>
+          : never
+          : never
+          : never
+          : never
+          : never
+          : never)
+
+        | (undefined extends DestVal<Destination, D> ? IgnoreDirective : never)
+      ))
+    : (
+      | LocalRenameFor<DestVal<Destination, D>, SrcIdx>
+      | GlobalRenameFor<DestVal<Destination, D>, RootIdx>
+      | TransformDirectiveRenamed<Source, (s: Source) => DestVal<Destination, D>>
+      | (
+        ExtractObjectField<Destination[D]> extends never
+        ? never
+        : HasNullish<Destination[D]> extends true
+        ? never
+        : (
+          ExtractObjectField<Source[D]> extends never
+          ? FlatMapDirective<
+            ExtractObjectField<RootSource>,
+            ExtractObjectField<Destination[D]>
+          >
+          : never
+        )
+      )
+      | (
+        ObjOrNever<Destination[D]> extends infer DO
+        ? DO extends Record<string, any>
+        ? FlatMapAfterDirective<RootSource, DO>
+        : never
+        : never
+      )
+      | (
+        HasNull<Destination[D]> extends true
+        ? (
+          NullableMapFromDirective<
+            RootSource,
+            string,
+            ObjOrNever<Destination[D]>
+          >
+          & { src: ObjectishPaths<RootSource> }
+        )
+        : never
+      )
+      | (
+        HasUndefined<Destination[D]> extends true
+        ? (
+          OptionalMapFromDirective<
+            RootSource,
+            string,
+            ObjOrNever<Destination[D]>
+          >
+          & { src: ObjectishPaths<RootSource> }
+        )
+        : never
+      )
+      | (undefined extends DestVal<Destination, D> ? IgnoreDirective : never)
+    ))
 }>;
+
+type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 
 export type SimpleMapper<
   Source extends Record<string, any>,
   Destination extends Record<string, any>,
-> = Required<MapMatchingKeys<Source, Destination>>;
+  RootSource extends Record<string, any> = Source,
+> = Expand<Required<MapMatchingKeys<Source, Destination, RootSource>>>;
 
-export type MapOneFn<Source, Destination> = (source: Source) => Destination;
-export type MapManyFn<Source, Destination> = (
+export type MapOneFn<Source, Destination, RootSource = Source> = (
+  source: Source,
+  root?: RootSource,
+) => Destination;
+export type MapManyFn<Source, Destination, RootSource = Source> = (
   source: Source[],
+  root?: RootSource,
 ) => Destination[];
 
 export type MapperFns<
   Source extends Record<string, any>,
   Destination extends Record<string, any>,
+  RootSource extends Record<string, any> = Source,
 > = {
-  mapOne: MapOneFn<Source, Destination>;
-  mapMany: MapManyFn<Source, Destination>;
+  mapOne: MapOneFn<Source, Destination, RootSource>;
+  mapMany: MapManyFn<Source, Destination, RootSource>;
 };
 
-/**
-Simple mapper for transforming objects.
-
-You should always explicitly specify Type Parameters (Source, Destination) if you have generic types like Record or custom generic types.
-* @param source - The object to transform.
-* @param mapping - The mapping configuration that defines how each field in the destination is populated.
-* @returns a collection of functions to map one or many objects.
-
-@example
-
-```ts
-* import mapia from 'mapia';
-* 
-* interface UserResponse {
-* ⠀⠀id: string;
-* ⠀⠀age: number;
-* ⠀⠀name: string;
-* ⠀⠀createdAt: string;
-* };
-* 
-* class UserEntity {
-* ⠀⠀id: number;
-* ⠀⠀age: number;
-* ⠀⠀name: string;
-* ⠀⠀createdAt: Date;
-* ⠀⠀updatedAt?: Date;
-* };
-* 
-* type FromApiToEntity = SimpleMapper<
-* ⠀⠀UserResponse,
-* ⠀⠀UserEntity
-* >;
-* 
-* const fromApiToEntity = compileMapper<
-* ⠀⠀UserResponse,
-* ⠀⠀UserEntity
-* >({
-* ⠀⠀name: "name", // maps automatically by TS compiler
-* ⠀⠀age: "age", // maps automatically TS compiler
-* ⠀⠀id: transform((x) => Number(x)), 
-* ⠀⠀createdAt: transform((x) => new Date(x)),
-* ⠀⠀updatedAt: ignore(), // Ignore allowed only if destination is optional
-* }); 
-* 
-* const userResponse: UserResponse = {
-* ⠀⠀id: "1",
-* ⠀⠀age: 25,
-* ⠀⠀name: "John Doe",
-* ⠀⠀createdAt: "2023-01-01",
-* };
-* 
-* const userEntity: UserEntity = fromApiToEntity.mapOne<UserResponse, UserEntity>(
-* ⠀⠀userResponse,
-* );
-```
-*/
 export function compileMapper<
   Source extends Record<string, any>,
   Destination extends Record<string, any>,
+  RootSource extends Record<string, any> = Source,
 >(
-  mapping: SimpleMapper<Source, Destination>
-): MapperFns<Source, Destination> {
-  const helperFns: Array<(value: any) => any> = [];
+  mapping: SimpleMapper<Source, Destination, RootSource>
+): MapperFns<Source, Destination, RootSource> {
+
+  const helperFns: Array<(...args: any[]) => any> = [];
   const literalAssignments: string[] = [];
 
-  for (const destKey of Object.keys(mapping) as Array<keyof Destination & string>) {
+  const indent = (value: string): string =>
+    value
+      .split("\n")
+      .map((line) => `  ${line}`)
+      .join("\n");
+
+  const accessor = (path: string[]): string => {
+    if (path.length === 0) {
+      return "source";
+    }
+
+    return `source${path
+      .map((segment) => `["${jsStringEscape(segment)}"]`)
+      .join("")}`;
+  };
+
+  const rootAccessor = (path: string[]): string => {
+    if (path.length === 0) {
+      return "root";
+    }
+
+    return `root${path
+      .map((segment) => `["${jsStringEscape(segment)}"]`)
+      .join("")}`;
+  };
+
+  const buildObjectLiteral = (
+    objectMapping: Record<string, any>,
+    sourcePath: string[],
+  ): string => {
+    const entries: string[] = [];
+
+    for (const nestedKey of Object.keys(objectMapping)) {
+      const nestedInstruction = objectMapping[nestedKey];
+
+      if (
+        nestedInstruction &&
+        typeof nestedInstruction === "object" &&
+        "__kind" in nestedInstruction &&
+        nestedInstruction.__kind === "ignore"
+      ) {
+        continue;
+      }
+
+      const expression = buildValueExpression(nestedKey, nestedInstruction, sourcePath);
+      entries.push(`"${jsStringEscape(nestedKey)}": ${expression},`);
+    }
+
+    if (!entries.length) {
+      return "{}";
+    }
+
+    const nestedObject = `{
+${indent(entries.join("\n"))}
+}`;
+
+    const sourceAccessor = accessor(sourcePath);
+    return `(${sourceAccessor} == null ? null : ${nestedObject})`;
+  };
+
+  const buildValueExpression = (
+    destKey: string,
+    instruction: unknown,
+    sourcePath: string[],
+  ): string => {
+    if (typeof instruction === "string") {
+      if (sourcePath.length === 0 && instruction !== destKey) {
+        throw new Error(
+          `Direct mapping for destination field "${destKey}" must be "${destKey}", but got "${instruction}".`,
+        );
+      }
+
+      return accessor([...sourcePath, instruction]);
+    }
+
+    if (
+      instruction &&
+      typeof instruction === "object" &&
+      "__kind" in instruction
+    ) {
+      const directive = instruction as
+        | RenameDirective<RenameSourcePath>
+        | GlobalRenameDirective<GlobalRenameSourcePath>
+        | TransformDirectiveSame<Source, string, (value: any) => any>
+        | TransformDirectiveRenamed<Source, (source: Source) => any>
+        | MapDirective<any, any, any>
+        | FlatMapDirective<any, any>
+        | NullableMapFromDirective<RootSource, string, any>
+        | OptionalMapFromDirective<RootSource, string, any>
+        | FlatMapAfterDirective<RootSource, any>
+        | NullableMapDirective<Source, any, RootSource>
+        | OptionalMapDirective<Source, any, RootSource>
+        | IgnoreDirective;
+
+      switch (directive.__kind) {
+        case "rename": {
+          const srcSegments = directive.src.split(".");
+          return accessor([...sourcePath, ...srcSegments]);
+        }
+        case "globalRename": {
+          const srcSegments = directive.src.split(".");
+          const pathSegments = srcSegments[0] === "source"
+            ? srcSegments.slice(1)
+            : srcSegments;
+          return rootAccessor(pathSegments);
+        }
+        case "transform": {
+          const transformDirective = directive as
+            | TransformDirectiveSame<Source, string, (value: any) => any>
+            | TransformDirectiveRenamed<Source, (source: Source) => any>;
+          const helperIndex = helperFns.push(transformDirective.fn) - 1;
+          const sourceAccessor = accessor(sourcePath);
+
+          if (transformDirective.renamed) {
+            return `helpers[${helperIndex}](${sourceAccessor})`;
+          }
+
+          return `helpers[${helperIndex}](${accessor([...sourcePath, destKey])})`;
+        }
+        case "flatMap": {
+          const mapDirective = directive as FlatMapDirective<any, any>;
+          const helperIndex = helperFns.push((_ignored: any, root: any) =>
+            mapDirective.mapper.mapOne(root, root)
+          ) - 1;
+
+          return `helpers[${helperIndex}](null, root)`;
+        }
+
+        case "map": {
+          const mapDirective = directive as MapDirective<any, any, any>;
+          const helperIndex = helperFns.push((value: any, root: any) =>
+            Array.isArray(value)
+              ? mapDirective.mapper.mapMany(value, root)
+              : mapDirective.mapper.mapOne(value, root)
+          ) - 1;
+
+          const parentAccessor = accessor(sourcePath);
+          const sourceAccessor = accessor([...sourcePath, destKey]);
+
+          return `(${parentAccessor} == null
+    ? null
+    : (() => {
+        const v = ${sourceAccessor};
+        return helpers[${helperIndex}](
+          (v == null ? {} : v),
+          root
+        );
+      })()
+  )`;
+        }
+
+        case "nullableMap": {
+          const d = directive as NullableMapDirective<any, any, any>;
+
+          const helperIndex = helperFns.push((value: any, root: any) =>
+            Array.isArray(value)
+              ? d.mapper.mapMany(value, root)
+              : d.mapper.mapOne(value, root)
+          ) - 1;
+
+          const src = accessor([...sourcePath, destKey]);
+          return `(() => {
+    const v = ${src};
+    return (v == null ? null : helpers[${helperIndex}](v, root));
+  })()`;
+        }
+
+
+        case "optionalMap": {
+          const d = directive as OptionalMapDirective<any, any, any>;
+
+          const helperIndex = helperFns.push((value: any, root: any) =>
+            Array.isArray(value)
+              ? d.mapper.mapMany(value, root)
+              : d.mapper.mapOne(value, root)
+          ) - 1;
+
+          const src = accessor([...sourcePath, destKey]);
+          return `(() => {
+    const v = ${src};
+    return (v === undefined ? undefined : helpers[${helperIndex}](v, root));
+  })()`;
+        }
+
+
+
+        case "flatMapAfter": {
+          const flatMapAfterDirective = directive as FlatMapAfterDirective<
+            RootSource,
+            any
+          >;
+          const mapHelperIndex = helperFns.push((value: any, root: any) =>
+            flatMapAfterDirective.mapper.mapOne(value, root)
+          ) - 1;
+
+          const transformHelperIndex = helperFns.push(flatMapAfterDirective.fn) - 1;
+          return `(() => {
+  const intermediate = helpers[${transformHelperIndex}](root);
+  return helpers[${mapHelperIndex}](intermediate, root);
+})()`;
+        }
+        case "nullableMapFrom": {
+          const nullableMapDirective = directive as NullableMapFromDirective<
+            RootSource,
+            string,
+            any
+          >;
+
+          const srcSegments = nullableMapDirective.src.split(".");
+
+          const helperIndex = helperFns.push((root: any) => {
+            let value = root;
+            for (const seg of srcSegments) {
+              if (value == null) return null;
+              value = value[seg];
+            }
+            if (value == null) return null;
+            return nullableMapDirective.mapper.mapOne(value, root);
+          }) - 1;
+
+          return `helpers[${helperIndex}](root)`;
+        }
+
+        case "optionalMapFrom": {
+          const optionalMapDirective = directive as OptionalMapFromDirective<
+            RootSource,
+            string,
+            any
+          >;
+          const srcSegments = optionalMapDirective.src.split(".");
+          const helperIndex = helperFns.push((root: any) => {
+            let value = root;
+            for (const seg of srcSegments) {
+              if (value == undefined) return undefined;
+              value = value[seg];
+            }
+            if (value == undefined) return undefined;
+            return optionalMapDirective.mapper.mapOne(value, root);
+          }) - 1;
+
+          return `helpers[${helperIndex}](root)`;
+        }
+        default:
+          throw new Error("Invalid directive kind");
+      }
+    }
+
+    if (instruction && typeof instruction === "object") {
+      const nestedSourcePath = [...sourcePath, destKey];
+      return buildObjectLiteral(
+        instruction as Record<string, any>,
+        nestedSourcePath,
+      );
+    }
+
+    throw new Error(
+      `Invalid mapping instruction for destination field "${destKey}".`,
+    );
+  };
+
+  for (const destKey of Object.keys(mapping) as Array<keyof typeof mapping & string>) {
     const instruction = mapping[destKey]!;
     if (instruction === undefined) {
       throw new Error(`Instruction at "${destKey}" field in destination is undefined`);
     }
-    const destField = `"${jsStringEscape(destKey)}"`;
 
-    if (typeof instruction === "string") {
-      if (instruction !== destKey) {
-        throw new Error(
-          `Direct mapping for destination field "${destKey}" must be "${destKey}", but got "${instruction}".`
-        );
-      }
-      literalAssignments.push(`${destField}: source["${jsStringEscape(instruction)}"],`);
+    if (
+      instruction &&
+      typeof instruction === "object" &&
+      "__kind" in instruction &&
+      instruction.__kind === "ignore"
+    ) {
       continue;
     }
 
-    if ("__kind" in instruction) {
-      switch (instruction.__kind) {
-        case "rename":
-          literalAssignments.push(`${destField}: source["${jsStringEscape(instruction.src)}"],`);
-          break;
-        case "transform": {
-          const helperIndex = helperFns.push(instruction.fn) - 1;
-          if (instruction.renamed) {
-            literalAssignments.push(`${destField}: helpers[${helperIndex}](source),`);
-          } else {
-            literalAssignments.push(`${destField}: helpers[${helperIndex}](source[${destField}]),`);
-          }
-          break;
-        }
-        case "ignore":
-          // Omit from literal for optional fields
-          break;
-      }
-    }
+    const destField = `"${jsStringEscape(destKey)}"`;
+    const expression = buildValueExpression(destKey, instruction, []);
+
+    literalAssignments.push(`${destField}: ${expression},`);
   }
 
-  // For mapOne
-  const mapOneBody = `return {\n${literalAssignments.join('\n')}\n};`;
+  const mapOneBody = `const root = (rootArg == null ? source : rootArg);\nreturn {\n${literalAssignments.join('\n')}\n};`;
+
   const mapOneInner = new Function(
     "source",
     "helpers",
+    "rootArg",
     mapOneBody
-  ) as (source: Source, helpers: Array<(value: any) => any>) => Destination;
-  const mapOne: MapOneFn<Source, Destination> = (source) => mapOneInner(source, helperFns);
+  ) as (source: Source, helpers: Array<(...args: any[]) => any>, rootArg: RootSource | undefined) => Destination;
+  const mapOne: MapOneFn<Source, Destination, RootSource> = (
+    source,
+    root,
+  ) => mapOneInner(source, helperFns, root ?? (source as unknown as RootSource));
 
-  // For mapMany
   const mapManyBody = `
     const results = new Array(input.length);
     for (let i = 0; i < input.length; ++i) {
       const source = input[i];
+      const root = (rootArg == null ? source : rootArg);
       results[i] = {
         ${literalAssignments.join('\n')}
       };
@@ -382,9 +842,13 @@ export function compileMapper<
   const mapManyInner = new Function(
     "input",
     "helpers",
+    "rootArg",
     mapManyBody
-  ) as (input: Source[], helpers: Array<(value: any) => any>) => Destination[];
-  const mapMany: MapManyFn<Source, Destination> = (input) => mapManyInner(input, helperFns);
+  ) as (input: Source[], helpers: Array<(...args: any[]) => any>, rootArg: RootSource | undefined) => Destination[];
+  const mapMany: MapManyFn<Source, Destination, RootSource> = (
+    input,
+    root,
+  ) => mapManyInner(input, helperFns, root);
 
   return { mapOne, mapMany };
 }
@@ -402,6 +866,15 @@ export function mapRecord<I, O>(
   }
   return result;
 }
+
+/**
+ * Helper for inline nested mappings inside `compileMapper` configurations.
+ *
+ * It compiles the provided nested configuration once and returns a map directive
+ * that automatically invokes the nested mapper when the field is processed.
+ */
+export type SourceOfMapping<M> = M extends SimpleMapper<infer S, any, any> ? S : never;
+export type DestinationOfMapping<M> = M extends SimpleMapper<any, infer D, any> ? D : never;
 
 export default { compileMapper };
 
@@ -424,3 +897,9 @@ export const trw = transformWithRename;
  * Alias for ignore function
  */
 export const ig = ignore;
+
+export type AssertEqual<T, Expected> = T extends Expected
+  ? Expected extends T
+  ? true
+  : never
+  : never;

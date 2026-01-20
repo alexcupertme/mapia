@@ -1,38 +1,38 @@
 [
   {
     "name": "object mapping (simple);AutoMapper",
-    "hz": 231241.83387358152
+    "hz": 362987.21508258395
   },
   {
     "name": "object mapping (simple);Mapia",
-    "hz": 849576302.5696111
+    "hz": 855641203.1184442
   },
   {
     "name": "object mapping (simple);Class Transformer",
-    "hz": 396128.86399349954
+    "hz": 397117.45441432967
   },
   {
     "name": "object mapping (complex type);AutoMapper",
-    "hz": 69119.77317856696
+    "hz": 69131.27831280653
   },
   {
     "name": "object mapping (complex type);Mapia",
-    "hz": 659089.6012922317
+    "hz": 658321.4117159208
   },
   {
     "name": "object mapping (complex type);Class Transformer",
-    "hz": 45736.340535284246
+    "hz": 45001.042063125606
   },
   {
     "name": "object mapping (complex type, batch);AutoMapper",
-    "hz": 138.5573809867527
+    "hz": 139.18791829635705
   },
   {
     "name": "object mapping (complex type, batch);Mapia",
-    "hz": 1147.3156613434037
+    "hz": 1234.7210417349092
   },
   {
     "name": "object mapping (complex type, batch);Class Transformer",
-    "hz": 83.83853071443833
+    "hz": 86.0226171466059
   }
 ]

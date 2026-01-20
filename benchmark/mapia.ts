@@ -1,4 +1,4 @@
-import { rename, enumMapper, compileMapper, transform, transformWithRename } from '../src/index';
+import { rename, enumMapper, compileMapper, transform, transformWithRename, map } from '../src/index';
 import {
   BankAccountEntity,
   BankAccountResponse,
@@ -40,12 +40,15 @@ export const bankMapper = compileMapper<BankAccountResponse, BankAccountEntity>(
   currency: transform(currencyMapper.toDestination),
   status: 'status',
   statistics: 'statistics',
-  contactInfo: transformWithRename((source) =>
-    contactInfoMapper.mapOne(source.contactInfo),
-  ),
+  contactInfo: map({
+    phone: 'phone',
+    primaryEmail: rename('email'),
+  }),
   tags: 'tags',
-  transactions: transformWithRename((source) =>
-    transactionMapper.mapMany(source.transactions),
-  ),
+  transactions: map({
+    transactionId: rename('txId'),
+    amountCents: transformWithRename((source) => Math.round(source.amount * 100)),
+    timestamp: transformWithRename((source) => new Date(source.timestamp)),
+  }),
   createdAt: transform((value) => new Date(value)),
 });
