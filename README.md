@@ -12,7 +12,7 @@ Mapia is a fast, type-safe object mapper for TypeScript that keeps mappings expl
 >
 > January 2026 update: **Major object mapping update!**
 
-[See more updates!](./docs/misc/release-notes.md)
+[See more updates!](https://alexcupertme.github.io/mapia/misc/release-notes)
 
 ## Quick start
 
