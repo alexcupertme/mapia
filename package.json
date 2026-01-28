@@ -12,6 +12,7 @@
   "scripts": {
     "build:esm": "tsc --project tsconfig.esm.json",
     "build:cjs": "tsc --project tsconfig.cjs.json",
+    "lint:fix": "eslint './src/**/*.ts' --fix",
     "build": "rimraf dist && tsup",
     "run:bench": "ts-node benchmark/run.ts",
     "run:typebench": "tsc -p ./types-benchmark/tsconfig.bench.json --noEmit --pretty false --extendedDiagnostics",
@@ -62,6 +63,7 @@
     "benchmark": "^2.1.4",
     "class-transformer": "^0.5.1",
     "d3": "^7.9.0",
+    "eslint": "^9.39.2",
     "eslint-import-resolver-typescript": "^4.3.4",
     "eslint-plugin-import-x": "^4.11.0",
     "eslint-plugin-jest": "^28.11.0",

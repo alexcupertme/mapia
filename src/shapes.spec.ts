@@ -222,7 +222,6 @@ describe("shapes", () => {
     });
   });
 
-
   describe("leftToUndefined", () => {
     it("should return undefined for invalid input", () => {
       const decoder = leftToUndefined(urlDecoder);

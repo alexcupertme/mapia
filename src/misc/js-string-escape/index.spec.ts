@@ -1,21 +1,24 @@
+import punycode from "node:punycode";
+
 import jsStringEscape from "./index";
-import punycode from "punycode";
 
 describe("jsStringEscape", () => {
   test("basic use", () => {
-    expect(jsStringEscape('"Hello World!"')).toBe('\\"Hello World!\\"');
+    expect(jsStringEscape('"Hello World!"')).toBe(String.raw`\"Hello World!\"`);
   });
 
   test("invariants", () => {
     let allCharacters = "";
 
     // BMP code points
-    for (let i = 0; i <= 0x00ffff; i++) {
-      allCharacters += String.fromCharCode(i);
+    // eslint-disable-next-line prettier/prettier
+    for (let i = 0; i <= 0x00FFFF; i++) {
+      allCharacters += String.fromCodePoint(i);
     }
 
     // Astral code points
-    for (let i = 0x010000; i <= 0x10ffff; i++) {
+    // eslint-disable-next-line prettier/prettier
+    for (let i = 0x010000; i <= 0x10FFFF; i++) {
       allCharacters += punycode.ucs2.encode([i]);
     }
 
@@ -28,9 +31,11 @@ describe("jsStringEscape", () => {
 
   test("supports arbitrary objects", () => {
     expect(jsStringEscape(null)).toBe("null");
-    expect(jsStringEscape(undefined)).toBe("undefined");
+
+    //@ts-expect-error for testing purposes
+    expect(jsStringEscape()).toBe("undefined");
     expect(jsStringEscape(false)).toBe("false");
-    expect(jsStringEscape(0.0)).toBe("0");
+    expect(jsStringEscape(0)).toBe("0");
     expect(jsStringEscape({})).toBe("[object Object]");
     expect(jsStringEscape("")).toBe("");
   });

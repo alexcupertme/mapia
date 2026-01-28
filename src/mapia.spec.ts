@@ -1,22 +1,22 @@
 import {
   AssertEqual,
   compileMapper,
+  flatMap,
+  flatMapAfter,
   globalRename,
   ignore,
   map,
+  mapAfter,
   mapRecord,
+  mapUnionBy,
+  nullableMap,
+  nullableMapFrom,
+  optionalMap,
+  optionalMapFrom,
   rename,
   SimpleMapper,
-  flatMap,
   transform,
   transformWithRename,
-  nullableMap,
-  optionalMap,
-  flatMapAfter,
-  nullableMapFrom,
-  optionalMapFrom,
-  mapUnionBy,
-  mapAfter,
 } from "./mapia";
 
 const formatOrderValue = (value: number): string => `formatted-${value}`;
@@ -37,9 +37,10 @@ describe("mapia", () => {
 
     const sourceToDestinationMapper = compileMapper<Source, Destination>({
       age: transform((x: number) => x.toString()),
-      gender: transformWithRename((value) => value.isMale ? "male" : "female"
+      gender: transformWithRename((value) =>
+        value.isMale ? "male" : "female",
       ),
-      fullName: rename('name')
+      fullName: rename("name"),
     });
 
     const expected: Destination = {
@@ -63,7 +64,7 @@ describe("mapia", () => {
       constructor(
         public name: string,
         public age: number,
-      ) { }
+      ) {}
 
       meow(): void {
         console.log("meow");
@@ -74,7 +75,7 @@ describe("mapia", () => {
       constructor(
         public fullName: string,
         public age: string,
-      ) { }
+      ) {}
 
       bark(): void {
         console.log("bark");
@@ -103,14 +104,14 @@ describe("mapia", () => {
       constructor(
         public name: string,
         public formatter: (value: number) => string,
-      ) { }
+      ) {}
     }
 
     class DestinationWithFunction {
       constructor(
         public label: string,
         public format: (value: number) => string,
-      ) { }
+      ) {}
     }
 
     type SourceShape = Pick<SourceWithFunction, "name" | "formatter">;
@@ -206,9 +207,9 @@ describe("mapia", () => {
 
     const mapper = compileMapper<Source, Destination>({
       profile: map({
-        name: rename('firstName'),
+        name: rename("firstName"),
         contactEmail: rename("email"),
-        metadata: 'metadata',
+        metadata: "metadata",
       }),
     });
 
@@ -258,7 +259,7 @@ describe("mapia", () => {
     };
 
     const mapper = compileMapper<Source, Destination>({
-      primaryEmail: rename('profile.contact.email'),
+      primaryEmail: rename("profile.contact.email"),
     });
 
     const mapped = mapper.mapOne({
@@ -268,7 +269,7 @@ describe("mapia", () => {
           phoneNumber: 0,
           metadata: {
             birthDate: new Date(),
-          }
+          },
         },
       },
       field1: "",
@@ -276,8 +277,8 @@ describe("mapia", () => {
       field3: false,
       field4: {
         field5: "",
-        field6: 0
-      }
+        field6: 0,
+      },
     });
 
     const _assert: AssertEqual<typeof mapped, Destination> = true;
@@ -360,28 +361,28 @@ describe("mapia", () => {
               rootId: string;
               subNested: {
                 rootId: string;
-              }
+              };
             };
           };
-        },
+        };
       };
     };
 
     const mapper = compileMapper<Source, Destination>({
       nested: map({
         child: "child",
-        rootId: globalRename('source.id'),
+        rootId: globalRename("source.id"),
         anotherProp: transformWithRename(() => "constantValue"),
         subNested: flatMap({
-          rootIdAgain: rename('id'),
+          rootIdAgain: rename("id"),
           subSubNested: flatMap({
-            rootIdAgainAgain: rename('id'),
+            rootIdAgainAgain: rename("id"),
             subNested: flatMap({
-              rootId: rename('id'),
+              rootId: rename("id"),
               subNested: flatMap({
-                rootId: rename('id'),
-              })
-            })
+                rootId: rename("id"),
+              }),
+            }),
           }),
         }),
         field1: "field1",
@@ -410,7 +411,7 @@ describe("mapia", () => {
         field24: "field24",
         field25: "field25",
         field26: "field26",
-        field27: "field27"
+        field27: "field27",
       }),
     });
 
@@ -444,7 +445,7 @@ describe("mapia", () => {
         field24: "",
         field25: "",
         field26: "",
-        field27: ""
+        field27: "",
       },
     });
 
@@ -460,10 +461,10 @@ describe("mapia", () => {
             subNested: {
               rootId: "root",
               subNested: {
-                rootId: "root"
-              }
-            }
-          }
+                rootId: "root",
+              },
+            },
+          },
         },
         field1: "",
         field2: "",
@@ -491,7 +492,7 @@ describe("mapia", () => {
         field24: "",
         field25: "",
         field26: "",
-        field27: ""
+        field27: "",
       },
     } satisfies Destination);
   });
@@ -515,10 +516,10 @@ describe("mapia", () => {
 
     const mapper = compileMapper<Source, Destination>({
       config: map({
-        id: transform(x => Number.parseInt(x, 10)),
-        title: "title"
+        id: transform((x) => Number.parseInt(x, 10)),
+        title: "title",
       }),
-      field: 'field',
+      field: "field",
     });
 
     const actual = mapper.mapOne({
@@ -582,7 +583,7 @@ describe("mapia", () => {
     };
 
     const hobbyToInterestMapper = compileMapper<Hobby, Interest>({
-      name: 'name',
+      name: "name",
       proficiency: rename("level"),
     });
 
@@ -631,7 +632,7 @@ describe("mapia", () => {
     const sourceToDestinationMapper = compileMapper<Source, Destination>({
       name: "name",
       age: "age",
-      interests: transformWithRename((value: Source) => value.hobbies),
+      interests: rename("hobbies"),
     });
 
     const mapped = sourceToDestinationMapper.mapOne({
@@ -813,25 +814,21 @@ describe("mapia", () => {
   it("should work with optional fields", () => {
     type Source = {
       optionalField?: string;
-    }
+    };
 
     type Destination = {
       optionalField: string | null;
-    }
+    };
 
-    const mapper = compileMapper<
-      Source,
-      Destination
-    >({
-      optionalField: transform((x) => x ?? null)
+    const mapper = compileMapper<Source, Destination>({
+      optionalField: transform((x) => x ?? null),
     });
 
     const mapped1 = mapper.mapOne({ optionalField: "value" });
 
     expect(mapped1).toEqual({ optionalField: "value" });
-  })
+  });
   it("should work with deep nested types", () => {
-
     type Source = {
       id: string;
       name: string;
@@ -844,8 +841,8 @@ describe("mapia", () => {
           subAddress: {
             street: string;
             city: string;
-          }
-        }
+          };
+        };
       };
     };
 
@@ -861,16 +858,15 @@ describe("mapia", () => {
           subAddress: {
             street: string;
             city: string;
-          }
-        }
-
+          };
+        };
       };
     };
 
     const mapper = compileMapper<Source, Destination>({
       id: transform((x) => Number.parseInt(x, 10)),
       name: "name",
-      address: 'address',
+      address: "address",
     });
 
     const source: Source = {
@@ -884,9 +880,9 @@ describe("mapia", () => {
           city: "",
           subAddress: {
             street: "",
-            city: ""
-          }
-        }
+            city: "",
+          },
+        },
       },
     };
 
@@ -901,9 +897,9 @@ describe("mapia", () => {
           city: "",
           subAddress: {
             street: "",
-            city: ""
-          }
-        }
+            city: "",
+          },
+        },
       },
     };
 
@@ -941,8 +937,8 @@ describe("mapia", () => {
         id: transform((x) => Number.parseInt(x, 10)),
         subItems: map({
           id: transform((x) => Number.parseInt(x, 10)),
-          anotherProp: "anotherProp"
-        })
+          anotherProp: "anotherProp",
+        }),
       }),
     });
 
@@ -954,11 +950,11 @@ describe("mapia", () => {
           subItems: [
             {
               id: "1",
-              anotherProp: ""
+              anotherProp: "",
             },
             {
               id: "2",
-              anotherProp: ""
+              anotherProp: "",
             },
           ],
         },
@@ -967,11 +963,11 @@ describe("mapia", () => {
           subItems: [
             {
               id: "3",
-              anotherProp: ""
+              anotherProp: "",
             },
             {
               id: "4",
-              anotherProp: ""
+              anotherProp: "",
             },
           ],
         },
@@ -986,11 +982,11 @@ describe("mapia", () => {
           subItems: [
             {
               id: 1,
-              anotherProp: ""
+              anotherProp: "",
             },
             {
               id: 2,
-              anotherProp: ""
+              anotherProp: "",
             },
           ],
         },
@@ -999,11 +995,11 @@ describe("mapia", () => {
           subItems: [
             {
               id: 3,
-              anotherProp: ""
+              anotherProp: "",
             },
             {
               id: 4,
-              anotherProp: ""
+              anotherProp: "",
             },
           ],
         },
@@ -1019,8 +1015,10 @@ describe("mapia", () => {
     type Destination = { a: { x: string } };
 
     const mapper = compileMapper<Source, Destination>({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       a: {
         x: "x",
+
         // should be filtered out by buildObjectLiteral ignore handling
         y: ignore(),
       } as any,
@@ -1034,6 +1032,7 @@ describe("mapia", () => {
     type Destination = { a: { b: { c: string } } | null };
 
     const mapper = compileMapper<Source, Destination>({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       a: {
         b: {
           c: "c",
@@ -1049,7 +1048,7 @@ describe("mapia", () => {
     type Destination = { nested: { value: string } | null };
 
     const mapper = compileMapper<Source, Destination>({
-      nested: 'nested'
+      nested: "nested",
     });
 
     expect(mapper.mapOne({ nested: null })).toEqual({ nested: null });
@@ -1066,7 +1065,9 @@ describe("mapia", () => {
       }),
     });
 
-    expect(mapper.mapOne({ child: { x: "ok" } })).toEqual({ child: { y: "ok" } });
+    expect(mapper.mapOne({ child: { x: "ok" } })).toEqual({
+      child: { y: "ok" },
+    });
     expect(mapper.mapOne({ child: null })).toEqual({ child: null });
   });
 
@@ -1078,14 +1079,18 @@ describe("mapia", () => {
     type Destination = { child?: { y: string } };
 
     const childMapper = compileMapper<Child, { y: string }>({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       y: transform((v) => {
         invoked++;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         return v.toUpperCase();
       }) as any,
     });
 
     const mapper = compileMapper<Source, Destination>({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       child: optionalMap<Child, { y: string }, Source>({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         y: transform((c: any) => childMapper.mapOne({ x: c.x }).y) as any,
       }) as any,
     });
@@ -1096,6 +1101,7 @@ describe("mapia", () => {
 
   it("flatMapAfter() should run a root transform and then map using flat mapping", () => {
     type Source = { id: string; user: { name: string } };
+
     type Destination = { summary: { id: string; name: string } };
 
     const mapper = compileMapper<Source, Destination>({
@@ -1103,8 +1109,8 @@ describe("mapia", () => {
         id: root.id,
         name: root.user.name,
       }))({
-        id: "id",
         name: "name",
+        id: "id",
       }),
     });
 
@@ -1118,6 +1124,7 @@ describe("mapia", () => {
     type Destination = { out: { vv: string } | null };
 
     const mapper = compileMapper<Root, Destination>({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       out: nullableMapFrom("deep.inner", {
         vv: rename("v"),
       } as any),
@@ -1125,7 +1132,9 @@ describe("mapia", () => {
 
     expect(mapper.mapOne({ deep: null })).toEqual({ out: null });
     expect(mapper.mapOne({ deep: { inner: null } })).toEqual({ out: null });
-    expect(mapper.mapOne({ deep: { inner: { v: "x" } } })).toEqual({ out: { vv: "x" } });
+    expect(mapper.mapOne({ deep: { inner: { v: "x" } } })).toEqual({
+      out: { vv: "x" },
+    });
   });
 
   it("optionalMapFrom() should return undefined if any segment is undefined; otherwise map from that object", () => {
@@ -1133,6 +1142,7 @@ describe("mapia", () => {
     type Destination = { out?: { vv: string } };
 
     const mapper = compileMapper<Root, Destination>({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       out: optionalMapFrom("deep.inner", {
         vv: rename("v"),
       } as any),
@@ -1140,7 +1150,9 @@ describe("mapia", () => {
 
     expect(mapper.mapOne({})).toEqual({ out: undefined });
     expect(mapper.mapOne({ deep: {} })).toEqual({ out: undefined });
-    expect(mapper.mapOne({ deep: { inner: { v: "ok" } } })).toEqual({ out: { vv: "ok" } });
+    expect(mapper.mapOne({ deep: { inner: { v: "ok" } } })).toEqual({
+      out: { vv: "ok" },
+    });
   });
 
   it("transformWithRename() inside nested mapping should receive the *current object* at sourcePath (renamed=true branch)", () => {
@@ -1149,11 +1161,16 @@ describe("mapia", () => {
 
     const mapper = compileMapper<Source, Destination>({
       nested: map({
-        sum: transformWithRename((obj: { a: number; b: number }) => obj.a + obj.b) as any,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        sum: transformWithRename(
+          (obj: { a: number; b: number }) => obj.a + obj.b,
+        ) as any,
       }),
     });
 
-    expect(mapper.mapOne({ nested: { a: 2, b: 3 } })).toEqual({ nested: { sum: 5 } });
+    expect(mapper.mapOne({ nested: { a: 2, b: 3 } })).toEqual({
+      nested: { sum: 5 },
+    });
   });
 
   it("globalRename() should read from root (and tolerate a missing 'source.' prefix at runtime)", () => {
@@ -1188,6 +1205,7 @@ describe("mapia", () => {
     type Destination = { a: string };
 
     expect(() =>
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       compileMapper<Source, Destination>({
         a: 123,
       } as any),
@@ -1200,6 +1218,7 @@ describe("mapia", () => {
 
     expect(() =>
       compileMapper<Source, Destination>({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         a: { __kind: "notARealDirective" } as any,
       }),
     ).toThrow("Invalid directive kind");
@@ -1211,6 +1230,7 @@ describe("mapia", () => {
 
     // This is the guard in buildValueExpression for plain string instructions.
     expect(() =>
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       compileMapper<Source, Destination>({
         fullName: "name",
       } as any),
@@ -1224,6 +1244,7 @@ describe("mapia", () => {
 
     const mapper = compileMapper<Source, Destination>({
       // @ts-expect-error Generally just a "source" path not accepted but let's try root access
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       whole: globalRename("source") as any,
     });
 
@@ -1231,9 +1252,10 @@ describe("mapia", () => {
   });
   it("nested object literal should become {} when all nested keys are ignored (covers empty entries)", () => {
     type Source = { child: { a: string } };
-    type Destination = { child: {} };
+    type Destination = { child: object };
 
     const mapper = compileMapper<Source, Destination>({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       child: {
         a: ignore(),
       } as any,
@@ -1264,9 +1286,7 @@ describe("mapia", () => {
       }),
     });
 
-    expect(
-      mapper.mapOne({ items: [{ x: "a" }, { x: "b" }] }),
-    ).toEqual({
+    expect(mapper.mapOne({ items: [{ x: "a" }, { x: "b" }] })).toEqual({
       items: [{ y: "a" }, { y: "b" }],
     });
 
@@ -1306,138 +1326,147 @@ describe("mapia", () => {
   it("should work with union types", () => {
     enum PetType {
       Wolf = "wolf",
-      Dog = "dog"
+      Dog = "dog",
     }
 
     type WolfMapped = {
       kind: PetType.Wolf;
       volume: number;
       prop: string;
-    }
+    };
 
     type DogMapped = {
       kind: PetType.Dog;
       volume: number;
       prop: string;
-    }
+    };
 
     type Source = {
       pet: WolfMapped | DogMapped;
-    }
+    };
 
     type DawgUnmapped = {
-      kind: 'dawg';
+      kind: "dawg";
       volume: number;
       someProp: string;
-    }
+    };
 
     type WolfieUnmapped = {
-      kind: 'wolfie';
+      kind: "wolfie";
       volume: number;
       anotherProp: string;
-    }
+    };
 
     type Destination = {
       pet: DawgUnmapped | WolfieUnmapped;
-    }
+    };
 
     const mapper = compileMapper<Source, Destination>({
-      pet: mapUnionBy('kind', {
+      pet: mapUnionBy("kind", {
         kinds: {
           wolfie: PetType.Wolf,
-          dawg: PetType.Dog
+          dawg: PetType.Dog,
         },
         cases: {
           wolfie: map({
-            volume: 'volume',
-            anotherProp: rename('prop')
+            volume: "volume",
+            anotherProp: rename("prop"),
           }),
           dawg: map({
-            volume: 'volume',
-            someProp: rename('prop')
-          })
-        }
-      })
-    })
+            volume: "volume",
+            someProp: rename("prop"),
+          }),
+        },
+      }),
+    });
 
-    const mapped = mapper.mapMany([{
-      pet: {
-        kind: PetType.Wolf,
-        volume: 0,
-        prop: ""
-      }
-    }, {
-      pet: {
-        kind: PetType.Dog,
-        volume: 100,
-        prop: ""
-      }
-    }, {
-      pet: {
-        kind: PetType.Wolf,
-        volume: 35,
-        prop: ""
-      }
-    }]);
+    const mapped = mapper.mapMany([
+      {
+        pet: {
+          kind: PetType.Wolf,
+          volume: 0,
+          prop: "",
+        },
+      },
+      {
+        pet: {
+          kind: PetType.Dog,
+          volume: 100,
+          prop: "",
+        },
+      },
+      {
+        pet: {
+          kind: PetType.Wolf,
+          volume: 35,
+          prop: "",
+        },
+      },
+    ]);
 
-    const destination: Destination[] = [{
-      pet: {
-        kind: 'wolfie',
-        volume: 0,
-        anotherProp: ""
-      }
-    }, {
-      pet: {
-        kind: 'dawg',
-        volume: 100,
-        someProp: ""
-      }
-    }, {
-      pet: {
-        kind: 'wolfie',
-        volume: 35,
-        anotherProp: ""
-      }
-    }];
+    const destination: Destination[] = [
+      {
+        pet: {
+          kind: "wolfie",
+          volume: 0,
+          anotherProp: "",
+        },
+      },
+      {
+        pet: {
+          kind: "dawg",
+          volume: 100,
+          someProp: "",
+        },
+      },
+      {
+        pet: {
+          kind: "wolfie",
+          volume: 35,
+          anotherProp: "",
+        },
+      },
+    ];
+
     expect(mapped).toEqual(destination);
   });
   it("throws when no destination kind matches the source discriminant", () => {
     enum PetType {
       Wolf = "wolf",
-      Dog = "dog"
+      Dog = "dog",
     }
 
     type WolfMapped = {
       kind: PetType.Wolf;
       volume: number;
       prop: string;
-    }
+    };
 
     type DogMapped = {
       kind: PetType.Dog;
       volume: number;
       prop: string;
-    }
+    };
 
     type Source = {
       pet: WolfMapped | DogMapped;
-    }
+    };
 
     type DawgUnmapped = {
-      kind: 'dawg';
+      kind: "dawg";
       volume: number;
       someProp: string;
-    }
+    };
 
     type WolfieUnmapped = {
-      kind: 'wolfie';
+      kind: "wolfie";
       volume: number;
       anotherProp: string;
-    }
+    };
 
     type Destination = {
       pet: DawgUnmapped | WolfieUnmapped;
-    }
+    };
 
     const mapper = compileMapper<Source, Destination>({
       pet: mapUnionBy("kind", {
@@ -1450,56 +1479,60 @@ describe("mapia", () => {
     });
 
     expect(() =>
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mapper.mapOne({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         pet: {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           kind: "cat" as any,
           volume: 1,
           prop: "",
         } as any,
-      } as any)
+      } as any),
     ).toThrow(/no destination kind/);
   });
   it("throws when destination kind exists but case is missing", () => {
     enum PetType {
       Wolf = "wolf",
-      Dog = "dog"
+      Dog = "dog",
     }
 
     type WolfMapped = {
       kind: PetType.Wolf;
       volume: number;
       prop: string;
-    }
+    };
 
     type DogMapped = {
       kind: PetType.Dog;
       volume: number;
       prop: string;
-    }
+    };
 
     type Source = {
       pet: WolfMapped | DogMapped;
-    }
+    };
 
     type DawgUnmapped = {
-      kind: 'dawg';
+      kind: "dawg";
       volume: number;
       someProp: string;
-    }
+    };
 
     type WolfieUnmapped = {
-      kind: 'wolfie';
+      kind: "wolfie";
       volume: number;
       anotherProp: string;
-    }
+    };
 
     type Destination = {
       pet: DawgUnmapped | WolfieUnmapped;
-    }
+    };
 
     const mapper = compileMapper<Source, Destination>({
       pet: mapUnionBy("kind", {
         kinds: { wolfie: PetType.Wolf, dawg: PetType.Dog },
+
         //@ts-expect-error for a test
         cases: {
           dawg: map({ volume: "volume", someProp: rename("prop") }),
@@ -1508,13 +1541,14 @@ describe("mapia", () => {
     });
 
     expect(() =>
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mapper.mapOne({
         pet: {
           kind: PetType.Wolf,
           volume: 1,
           prop: "",
         },
-      } as any)
+      } as any),
     ).toThrow(/no case for destination kind/);
   });
   it("should return null when union value is null", () => {
@@ -1583,7 +1617,7 @@ describe("mapia", () => {
     });
   });
 
-  it("flatMap should work with arrays", () => {
+  it("mapAfter should work with arrays", () => {
     type Source = {
       id: string;
       items: Collection<{
@@ -1593,7 +1627,7 @@ describe("mapia", () => {
     };
 
     class Collection<T> {
-      constructor(private readonly items: T[]) { }
+      constructor(private readonly items: T[]) {}
 
       getItems(): T[] {
         return this.items;
@@ -1615,5 +1649,138 @@ describe("mapia", () => {
         anotherProp: "anotherProp",
       }),
     });
-  })
+
+    const actual = mapper.mapOne({
+      id: "root",
+      items: new Collection([
+        { id: "1", anotherProp: "a" },
+        { id: "2", anotherProp: "b" },
+      ]),
+    });
+
+    expect(actual).toEqual({
+      id: "root",
+      items: [
+        { id: "1", anotherProp: "a" },
+        { id: "2", anotherProp: "b" },
+      ],
+    });
+  });
+  it("mapAfter uses mapMany when fn returns an array", () => {
+    type Source = {
+      items: Collection<{ id: string; anotherProp: string }>;
+    };
+
+    class Collection<T> {
+      constructor(private readonly items: T[]) {}
+      getItems(): T[] {
+        return this.items;
+      }
+    }
+
+    type Destination = {
+      items: { id: string; anotherProp: string }[];
+    };
+
+    const mapper = compileMapper<Source, Destination>({
+      items: mapAfter(
+        (items) => items.getItems(), // ← returns ARRAY
+        {
+          id: "id",
+          anotherProp: "anotherProp",
+        },
+      ),
+    });
+
+    const result = mapper.mapOne({
+      items: new Collection([
+        { id: "1", anotherProp: "a" },
+        { id: "2", anotherProp: "b" },
+      ]),
+    });
+
+    expect(result.items).toEqual([
+      { id: "1", anotherProp: "a" },
+      { id: "2", anotherProp: "b" },
+    ]);
+  });
+  it("mapAfter uses mapOne when fn returns an object", () => {
+    type Source = {
+      item: { id: string; anotherProp: string };
+    };
+
+    type Destination = {
+      item: { id: string; anotherProp: string } | number;
+    };
+
+    const mapper = compileMapper<Source, Destination>({
+      item: mapAfter(
+        (item) => item, // ← returns OBJECT
+        {
+          id: "id",
+          anotherProp: "anotherProp",
+        },
+      ),
+    });
+
+    const result = mapper.mapOne({
+      item: { id: "1", anotherProp: "a" },
+    });
+
+    expect(result.item).toEqual({
+      id: "1",
+      anotherProp: "a",
+    });
+  });
+  it("flatMapAfter should work with arrays", () => {
+    type Source = {
+      values: Collection<{
+        id: string;
+        anotherProp: string;
+      }>;
+    };
+
+    class Collection<T> {
+      constructor(private readonly items: T[]) {}
+      getItems(): T[] {
+        return this.items;
+      }
+    }
+
+    type Destination = {
+      nested: {
+        items: Array<{
+          id: string;
+          anotherProp: string;
+        }>;
+      };
+    };
+
+    const mapper = compileMapper<Source, Destination>({
+      nested: flatMap({
+        items: flatMapAfter((source: Source) => source.values.getItems())({
+          id: "id",
+          anotherProp: "anotherProp",
+        }),
+      }),
+    });
+
+    const actual = mapper.mapOne({
+      values: new Collection([
+        { id: "1", anotherProp: "a" },
+        { id: "2", anotherProp: "b" },
+      ]),
+    });
+
+    const expected: Destination = {
+      nested: {
+        items: [
+          { id: "1", anotherProp: "a" },
+          { id: "2", anotherProp: "b" },
+        ],
+      },
+    };
+
+    expect(actual).toEqual(expected);
+  });
 });

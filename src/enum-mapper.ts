@@ -15,19 +15,29 @@ export type EnumNames<Enum extends EnumLike> = Extract<keyof Enum, string>;
 export type EnumValues<Enum extends EnumLike> = Enum[EnumNames<Enum>];
 
 /** Builds a destination key by appending a suffix to the source key. */
-export type EnumSuffix<Key extends string, Suffix extends string> = `${Key}${Suffix}`;
+export type EnumSuffix<
+  Key extends string,
+  Suffix extends string,
+> = `${Key}${Suffix}`;
 
 type EnumDestinationKey<
   Key extends string,
   Destination extends EnumLike,
   Suffix extends string,
-> = EnumSuffix<Key, Suffix> extends keyof Destination ? EnumSuffix<Key, Suffix> : never;
+> =
+  EnumSuffix<Key, Suffix> extends keyof Destination
+    ? EnumSuffix<Key, Suffix>
+    : never;
 
 type EnumSuffixNames<Source extends EnumLike, Suffix extends string> = {
   [Key in EnumNames<Source>]: EnumSuffix<Key, Suffix>;
 }[EnumNames<Source>];
 
-type AssertExactUnion<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never;
+type AssertExactUnion<A, B> = [A] extends [B]
+  ? [B] extends [A]
+    ? true
+    : never
+  : never;
 
 type EnumSuffixMatch<
   Source extends EnumLike,
@@ -47,13 +57,16 @@ export type EnumAutoSuffixMapping<
   Source extends EnumLike,
   Destination extends EnumLike,
   Suffix extends string = "_ENUM",
-> = EnumSuffixMatch<Source, Destination, Suffix> extends never
-  ? never
-  : Readonly<{
-      [Key in EnumNames<Source>]: Destination[
-        EnumDestinationKey<Key, Destination, Suffix>
-      ];
-    }>;
+> =
+  EnumSuffixMatch<Source, Destination, Suffix> extends never
+    ? never
+    : Readonly<{
+        [Key in EnumNames<Source>]: Destination[EnumDestinationKey<
+          Key,
+          Destination,
+          Suffix
+        >];
+      }>;
 
 /**
  * Utility that exposes the inferred destination keys for each source key.
@@ -63,11 +76,16 @@ export type EnumAutoSuffixDestinationKeys<
   Source extends EnumLike,
   Destination extends EnumLike,
   Suffix extends string = "_ENUM",
-> = EnumSuffixMatch<Source, Destination, Suffix> extends never
-  ? never
-  : {
-      readonly [Key in EnumNames<Source>]: EnumDestinationKey<Key, Destination, Suffix>;
-    };
+> =
+  EnumSuffixMatch<Source, Destination, Suffix> extends never
+    ? never
+    : {
+        readonly [Key in EnumNames<Source>]: EnumDestinationKey<
+          Key,
+          Destination,
+          Suffix
+        >;
+      };
 
 type EnumMappingValue<
   Source extends EnumLike,
@@ -121,7 +139,11 @@ export function enumMapper<
 
   for (const sourceKey of Object.keys(mapping) as Array<EnumNames<Source>>) {
     const sourceValue = sourceEnum[sourceKey] as EnumValues<Source>;
-    const destValue = mapping[sourceKey] as EnumMappingValue<Source, Destination, Suffix>;
+    const destValue = mapping[sourceKey] as EnumMappingValue<
+      Source,
+      Destination,
+      Suffix
+    >;
 
     forward[sourceValue] = destValue;
     reverse[destValue] = sourceValue;

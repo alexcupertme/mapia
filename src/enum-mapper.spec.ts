@@ -1,14 +1,14 @@
-import { AssertEqual } from './mapia';
-import { EnumAutoSuffixMapping, enumMapper } from './enum-mapper';
+import { EnumAutoSuffixMapping, enumMapper } from "./enum-mapper";
+import { AssertEqual } from "./mapia";
 
 enum ApiRole {
-  VIEWER = 'VIEWER',
-  READER = 'READER',
+  VIEWER = "VIEWER",
+  READER = "READER",
 }
 
 enum InternalRole {
-  VIEWER_ENUM = 'VIEWER_ENUM',
-  READER_ENUM = 'READER_ENUM',
+  VIEWER_ENUM = "VIEWER_ENUM",
+  READER_ENUM = "READER_ENUM",
 }
 
 const defaultRoleMap = enumMapper(ApiRole, InternalRole, {
@@ -16,47 +16,60 @@ const defaultRoleMap = enumMapper(ApiRole, InternalRole, {
   READER: InternalRole.READER_ENUM,
 });
 
-describe('enum mapper helpers', () => {
-  it('enforces suffix-based mappings', () => {
-    expect(defaultRoleMap.toDestination(ApiRole.VIEWER)).toBe(InternalRole.VIEWER_ENUM);
-    expect(defaultRoleMap.toSource(InternalRole.READER_ENUM)).toBe(ApiRole.READER);
+describe("enum mapper helpers", () => {
+  it("enforces suffix-based mappings", () => {
+    expect(defaultRoleMap.toDestination(ApiRole.VIEWER)).toBe(
+      InternalRole.VIEWER_ENUM,
+    );
+    expect(defaultRoleMap.toSource(InternalRole.READER_ENUM)).toBe(
+      ApiRole.READER,
+    );
   });
 
   it("maps common enums", () => {
     enum CommonStatus {
-      ACTIVE = 'ACTIVE',
-      INACTIVE = 'INACTIVE',
-      PENDING = 'PENDING',
+      ACTIVE = "ACTIVE",
+      INACTIVE = "INACTIVE",
+      PENDING = "PENDING",
     }
 
     enum CommonStatusSchema {
-      ACTIVE = 'ACTIVE',
-      INACTIVE = 'INACTIVE',
-      PENDING = 'PENDING',
+      ACTIVE = "ACTIVE",
+      INACTIVE = "INACTIVE",
+      PENDING = "PENDING",
     }
 
-    const commonStatusMap = enumMapper(CommonStatus, CommonStatusSchema, {
-      ACTIVE: CommonStatusSchema.ACTIVE,
-      INACTIVE: CommonStatusSchema.INACTIVE,
-      PENDING: CommonStatusSchema.PENDING,
-    }, "");
+    const commonStatusMap = enumMapper(
+      CommonStatus,
+      CommonStatusSchema,
+      {
+        ACTIVE: CommonStatusSchema.ACTIVE,
+        INACTIVE: CommonStatusSchema.INACTIVE,
+        PENDING: CommonStatusSchema.PENDING,
+      },
+      "",
+    );
 
-    expect(commonStatusMap.toDestination(CommonStatus.ACTIVE)).toBe(CommonStatusSchema.ACTIVE);
-    expect(commonStatusMap.toSource(CommonStatusSchema.INACTIVE)).toBe(CommonStatus.INACTIVE);
-  })
+    expect(commonStatusMap.toDestination(CommonStatus.ACTIVE)).toBe(
+      CommonStatusSchema.ACTIVE,
+    );
+    expect(commonStatusMap.toSource(CommonStatusSchema.INACTIVE)).toBe(
+      CommonStatus.INACTIVE,
+    );
+  });
 
-  it('allows custom suffixes while keeping inference', () => {
+  it("allows custom suffixes while keeping inference", () => {
     enum HttpStatus {
-      OK = 'OK',
-      NOT_OK = 'NOT_OK',
-      MAYBE_OK = 'MAYBE_OK',
+      OK = "OK",
+      NOT_OK = "NOT_OK",
+      MAYBE_OK = "MAYBE_OK",
       DEFAULT = "DEFAULT",
     }
 
     enum HttpStatusCode {
-      OK_CUSTOM = 'OK_CUSTOM',
-      NOT_OK_CUSTOM = 'NOT_OK_CUSTOM',
-      MAYBE_OK_CUSTOM = 'MAYBE_OK_CUSTOM',
+      OK_CUSTOM = "OK_CUSTOM",
+      NOT_OK_CUSTOM = "NOT_OK_CUSTOM",
+      MAYBE_OK_CUSTOM = "MAYBE_OK_CUSTOM",
       DEFAULT_CUSTOM = "DEFAULT_CUSTOM",
     }
 
@@ -69,7 +82,7 @@ describe('enum mapper helpers', () => {
         MAYBE_OK: HttpStatusCode.MAYBE_OK_CUSTOM,
         DEFAULT: HttpStatusCode.DEFAULT_CUSTOM,
       },
-      '_CUSTOM',
+      "_CUSTOM",
     );
 
     expect(suffixMap.toDestination(HttpStatus.NOT_OK)).toBe(
@@ -80,21 +93,21 @@ describe('enum mapper helpers', () => {
     );
   });
 
-  it('rejects stray destination keys', () => {
+  it("rejects stray destination keys", () => {
     enum HttpStatusOnly {
-      OK = 'OK',
+      OK = "OK",
     }
 
     enum HttpStatusCodeWithExtra {
-      OK_CUSTOM = 'OK_CUSTOM',
-      DEFAULT = 'DEFAULT',
+      OK_CUSTOM = "OK_CUSTOM",
+      DEFAULT = "DEFAULT",
     }
 
     type ExtraDestinationCheck = AssertEqual<
       EnumAutoSuffixMapping<
         typeof HttpStatusOnly,
         typeof HttpStatusCodeWithExtra,
-        '_CUSTOM'
+        "_CUSTOM"
       >,
       never
     >;
