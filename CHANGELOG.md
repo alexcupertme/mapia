@@ -1,3 +1,10 @@
+## [1.8.1](https://github.com/alexcupertme/mapia/compare/v1.8.0...v1.8.1) (2026-01-28)
+
+
+### Bug Fixes
+
+* mapAfter type ([7058a01](https://github.com/alexcupertme/mapia/commit/7058a014117ed3ace639e94ab58e2eff0f4c6250))
+
 # [1.8.0](https://github.com/alexcupertme/mapia/compare/v1.7.0...v1.8.0) (2026-01-28)
 
 
