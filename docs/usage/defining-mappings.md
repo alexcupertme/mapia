@@ -184,6 +184,81 @@ const mapper = compileMapper<Source, Destination>({
 });
 ```
 
+## mapUnionBy
+
+Use `mapUnionBy()` to map **discriminated unions** based on a discriminant field.
+
+::: code-group
+```ts [mapper.ts]
+import { compileMapper, map, mapUnionBy, rename } from "mapia";
+import { Source } from './source';
+import { Destination, PetType } from './destination';
+
+const mapper = compileMapper<Source, Destination>({
+  pet: mapUnionBy('kind', {
+    kinds: {
+      wolfie: PetType.Wolf,
+      dawg: PetType.Dog
+    },
+    cases: {
+      wolfie: map({
+        volume: 'volume',
+        anotherProp: rename('prop')
+      }),
+      dawg: map({
+        volume: 'volume',
+        someProp: rename('prop')
+      })
+    }
+  })
+})
+```
+
+> [!NOTE]
+> You shouldn't pass the discriminant field inside the case mappers — Mapia handles that automatically.
+
+```ts [source.ts]
+enum PetType {
+  Wolf = "wolf",
+  Dog = "dog"
+}
+
+type WolfMapped = {
+  kind: PetType.Wolf;
+  volume: number;
+  prop: string;
+}
+
+type DogMapped = {
+  kind: PetType.Dog;
+  volume: number;
+  prop: string;
+}
+
+type Source = {
+  pet: WolfMapped | DogMapped;
+}
+```
+
+```ts [destination.ts]
+type DawgUnmapped = {
+  kind: 'dawg';
+  volume: number;
+  someProp: string;
+}
+
+type WolfieUnmapped = {
+  kind: 'wolfie';
+  volume: number;
+  anotherProp: string;
+}
+
+type Destination = {
+  pet: DawgUnmapped | WolfieUnmapped;
+}
+```
+:::
+
 ## flatMap
 
 `flatMap()` switches context to the **root source** (or “current root”), letting you build a nested destination object using values that live outside the normal nested source location.

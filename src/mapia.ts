@@ -357,6 +357,67 @@ export function optionalMap<
   };
 }
 
+type DiscVal<U, K extends string> = U extends Record<K, infer V> ? V : never;
+type Variant<U, K extends string, V> = Extract<U, Record<K, V>>;
+
+export interface MapUnionByDiscriminantDirective<
+  Discriminant extends keyof SourceUnion & keyof DestinationUnion & string,
+  SourceUnion extends Record<string, any>,
+  DestinationUnion extends Record<string, any>,
+  RootSource extends Record<string, any>,
+  SrcKinds extends DiscVal<SourceUnion, Discriminant> = DiscVal<SourceUnion, Discriminant>,
+  DstKinds extends DiscVal<DestinationUnion, Discriminant> = DiscVal<DestinationUnion, Discriminant>,
+
+  KindMap extends Record<DstKinds & PropertyKey, SrcKinds> = Record<DstKinds & PropertyKey, SrcKinds>
+> {
+  __kind: "mapUnionByDiscriminant";
+  discriminant: Discriminant;
+  kinds: KindMap;
+  cases: Cases<SourceUnion, DestinationUnion, RootSource, Discriminant, SrcKinds, DstKinds, KindMap>;
+};
+
+type Cases<SourceUnion extends Record<string, any>, DestinationUnion extends Record<string, any>, RootSource extends Record<string, any>, Discriminant extends keyof SourceUnion & keyof DestinationUnion & string, SrcKinds extends DiscVal<SourceUnion, Discriminant> = DiscVal<SourceUnion, Discriminant>,
+  DstKinds extends DiscVal<DestinationUnion, Discriminant> = DiscVal<DestinationUnion, Discriminant>,
+  KindMap extends Record<DstKinds & PropertyKey, SrcKinds> = Record<DstKinds & PropertyKey, SrcKinds>
+> = {
+    [DK in keyof KindMap]: MapDirective<
+      Omit<Extract<Variant<SourceUnion, Discriminant, KindMap[DK]>, Record<string, any>>, Discriminant>,
+      Omit<Extract<Variant<DestinationUnion, Discriminant, DK>, Record<string, any>>, Discriminant>,
+      RootSource
+    >;
+  };
+
+export function mapUnionBy<
+  SourceUnion extends Record<string, any>,
+  DestinationUnion extends Record<string, any>,
+  RootSource extends Record<string, any>,
+  Discriminant extends keyof SourceUnion & keyof DestinationUnion & string,
+  SrcKinds extends DiscVal<SourceUnion, Discriminant> = DiscVal<SourceUnion, Discriminant>,
+  DstKinds extends DiscVal<DestinationUnion, Discriminant> = DiscVal<DestinationUnion, Discriminant>,
+
+  KindMap extends Record<DstKinds & PropertyKey, SrcKinds> = Record<DstKinds & PropertyKey, SrcKinds>
+>(
+  discriminant: Discriminant,
+  config: {
+    kinds: KindMap;
+    cases: Cases<SourceUnion, DestinationUnion, RootSource, Discriminant, SrcKinds, DstKinds, KindMap>;
+  }
+): MapUnionByDiscriminantDirective<
+  Discriminant,
+  SourceUnion,
+  DestinationUnion,
+  RootSource,
+  SrcKinds,
+  DstKinds,
+  KindMap
+> {
+  return {
+    __kind: "mapUnionByDiscriminant",
+    discriminant,
+    kinds: config.kinds,
+    cases: config.cases,
+  } as any;
+}
 
 type ArrayElement<T> = T extends readonly (infer U)[] ? U : never;
 
@@ -368,6 +429,97 @@ type DestVal<
 > = Destination[D];
 
 type ObjOrNever<T> = ExtractObjectField<StripNullish<T>>;
+
+type IsUnion<T, U = T> =
+  T extends any ? ([U] extends [T] ? false : true) : never;
+
+type NestedObjectMapForField<
+  Source extends Record<string, any>,
+  Destination extends Record<string, any>,
+  RootSource extends Record<string, any>,
+  D extends keyof Destination & string
+> =
+  D extends keyof Source
+  ? ExtractObjectField<Destination[D]> extends never ? never
+  : ExtractObjectField<Source[D]> extends never ? never
+  : IsUnion<ObjOrNever<Source[D]>> extends true
+  ? never
+  : HasNull<Destination[D]> extends true
+  ? NullableMapDirective<
+    ExtractObjectField<StripNullish<Source[D]>>,
+    ExtractObjectField<StripNullish<Destination[D]>>,
+    RootSource
+  >
+  : HasUndefined<Destination[D]> extends true
+  ? OptionalMapDirective<
+    ExtractObjectField<StripNullish<Source[D]>>,
+    ExtractObjectField<StripNullish<Destination[D]>>,
+    RootSource
+  >
+  : MapDirective<
+    ExtractObjectField<Source[D]>,
+    ExtractObjectField<Destination[D]>,
+    RootSource
+  >
+  : never;
+
+type IsBroadString<T> = T extends string ? (string extends T ? true : false) : false;
+type IsBroadNumber<T> = T extends number ? (number extends T ? true : false) : false;
+type IsBroadSymbol<T> = T extends symbol ? (symbol extends T ? true : false) : false;
+
+type IsBroadPrimitiveKey<T> =
+  IsBroadString<T> extends true ? true :
+  IsBroadNumber<T> extends true ? true :
+  IsBroadSymbol<T> extends true ? true :
+  false;
+
+type IsNarrowKey<T> =
+  T extends PropertyKey
+  ? (IsBroadPrimitiveKey<T> extends true ? false : true)
+  : false;
+
+type SharedKeys<SU, DU> = Extract<keyof SU & keyof DU, string>;
+
+type ValidUnionDiscriminants<
+  SU extends Record<string, any>,
+  DU extends Record<string, any>
+> = {
+  [K in SharedKeys<SU, DU>]:
+  IsNarrowKey<DiscVal<SU, K>> extends true
+  ? IsNarrowKey<DiscVal<DU, K>> extends true
+  ? K
+  : never
+  : never
+}[SharedKeys<SU, DU>];
+
+type UnionObjectMapForField<
+  Source extends Record<string, any>,
+  Destination extends Record<string, any>,
+  RootSource extends Record<string, any>,
+  D extends keyof Destination & string
+> =
+  D extends keyof Source
+  ? (
+    ObjOrNever<Source[D]> extends infer SU
+    ? ObjOrNever<Destination[D]> extends infer DU
+    ? [SU] extends [Record<string, any>]
+    ? [DU] extends [Record<string, any>]
+    ? IsUnion<SU> extends true
+    ? IsUnion<DU> extends true
+    ? MapUnionByDiscriminantDirective<
+      ValidUnionDiscriminants<SU, DU>,
+      SU,
+      DU,
+      RootSource
+    >
+    : never
+    : never
+    : never
+    : never
+    : never
+    : never
+  )
+  : never;
 
 export type MapMatchingKeys<
   Source extends Record<string, any>,
@@ -398,31 +550,8 @@ export type MapMatchingKeys<
           (s: Source) => DestVal<Destination, D>
         >
 
-        | (
-          D extends keyof Source
-          ? ExtractObjectField<Destination[D]> extends never
-          ? never
-          : ExtractObjectField<Source[D]> extends never
-          ? never
-          : HasNull<Destination[D]> extends true
-          ? NullableMapDirective<
-            ExtractObjectField<StripNullish<Source[D]>>,
-            ExtractObjectField<StripNullish<Destination[D]>>,
-            RootSource
-          >
-          : HasUndefined<Destination[D]> extends true
-          ? OptionalMapDirective<
-            ExtractObjectField<StripNullish<Source[D]>>,
-            ExtractObjectField<StripNullish<Destination[D]>>,
-            RootSource
-          >
-          : MapDirective<
-            ExtractObjectField<Source[D]>,
-            ExtractObjectField<Destination[D]>,
-            RootSource
-          >
-          : never
-        )
+        | NestedObjectMapForField<Source, Destination, RootSource, D>
+        | UnionObjectMapForField<Source, Destination, RootSource, D>
 
         | (StripNullish<Source[D]> extends readonly any[]
           ? StripNullish<DestVal<Destination, D>> extends readonly any[]
@@ -441,7 +570,6 @@ export type MapMatchingKeys<
           : never
           : never
           : never)
-
         | (undefined extends DestVal<Destination, D> ? IgnoreDirective : never)
       ))
     : (
@@ -620,6 +748,7 @@ ${indent(entries.join("\n"))}
         | TransformDirectiveSame<Source, string, (value: any) => any>
         | TransformDirectiveRenamed<Source, (source: Source) => any>
         | MapDirective<any, any, any>
+        | MapUnionByDiscriminantDirective<any, any, any, any>
         | FlatMapDirective<any, any>
         | NullableMapFromDirective<RootSource, string, any>
         | OptionalMapFromDirective<RootSource, string, any>
@@ -719,6 +848,60 @@ ${indent(entries.join("\n"))}
         }
 
 
+        case "mapUnionByDiscriminant": {
+          const d = directive as MapUnionByDiscriminantDirective<any, any, any, any>;
+
+          const helperIndex = helperFns.push((value: any, root: any) => {
+            if (value == null) return null;
+
+            const disc = d.discriminant;
+
+            const srcKind = value[disc];
+
+            let dstKind: any = undefined;
+            for (const dk in d.kinds as any) {
+              if ((d.kinds as any)[dk] === srcKind) {
+                dstKind = dk;
+                break;
+              }
+            }
+
+            if (dstKind === undefined) {
+              throw new Error(
+                `mapUnionByDiscriminant: no destination kind for ${String(disc)}=${String(srcKind)}`
+              );
+            }
+
+            const caseDirective = (d.cases as any)[dstKind];
+            if (!caseDirective) {
+              throw new Error(
+                `mapUnionByDiscriminant: no case for destination kind ${String(dstKind)}`
+              );
+            }
+
+            const payload: any = { ...value };
+            delete payload[disc];
+
+            const mapper = (caseDirective as any).mapper;
+            const mapped = mapper.mapOne(payload, root);
+
+            return { [disc]: dstKind, ...mapped };
+          }) - 1;
+
+          const parentAccessor = accessor(sourcePath);
+          const sourceAccessor = accessor([...sourcePath, destKey]);
+
+          return `(${parentAccessor} == null
+  ? null
+  : (() => {
+      const v = ${sourceAccessor};
+      return helpers[${helperIndex}](
+        (v == null ? null : v),
+        root
+      );
+    })()
+)`;
+        }
 
         case "flatMapAfter": {
           const flatMapAfterDirective = directive as FlatMapAfterDirective<

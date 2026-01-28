@@ -15,6 +15,7 @@ import {
   flatMapAfter,
   nullableMapFrom,
   optionalMapFrom,
+  mapUnionBy,
 } from "./mapia";
 
 const formatOrderValue = (value: number): string => `formatted-${value}`;
@@ -1301,4 +1302,284 @@ describe("mapia", () => {
     // That will blow up because rename("x") tries to access property on null.
     expect(() => mapper.mapOne({ child: null })).toThrow();
   });
+  it("should work with union types", () => {
+    enum PetType {
+      Wolf = "wolf",
+      Dog = "dog"
+    }
+
+    type WolfMapped = {
+      kind: PetType.Wolf;
+      volume: number;
+      prop: string;
+    }
+
+    type DogMapped = {
+      kind: PetType.Dog;
+      volume: number;
+      prop: string;
+    }
+
+    type Source = {
+      pet: WolfMapped | DogMapped;
+    }
+
+    type DawgUnmapped = {
+      kind: 'dawg';
+      volume: number;
+      someProp: string;
+    }
+
+    type WolfieUnmapped = {
+      kind: 'wolfie';
+      volume: number;
+      anotherProp: string;
+    }
+
+    type Destination = {
+      pet: DawgUnmapped | WolfieUnmapped;
+    }
+
+    const mapper = compileMapper<Source, Destination>({
+      pet: mapUnionBy('kind', {
+        kinds: {
+          wolfie: PetType.Wolf,
+          dawg: PetType.Dog
+        },
+        cases: {
+          wolfie: map({
+            volume: 'volume',
+            anotherProp: rename('prop')
+          }),
+          dawg: map({
+            volume: 'volume',
+            someProp: rename('prop')
+          })
+        }
+      })
+    })
+
+    const mapped = mapper.mapMany([{
+      pet: {
+        kind: PetType.Wolf,
+        volume: 0,
+        prop: ""
+      }
+    }, {
+      pet: {
+        kind: PetType.Dog,
+        volume: 100,
+        prop: ""
+      }
+    }, {
+      pet: {
+        kind: PetType.Wolf,
+        volume: 35,
+        prop: ""
+      }
+    }]);
+
+    const destination: Destination[] = [{
+      pet: {
+        kind: 'wolfie',
+        volume: 0,
+        anotherProp: ""
+      }
+    }, {
+      pet: {
+        kind: 'dawg',
+        volume: 100,
+        someProp: ""
+      }
+    }, {
+      pet: {
+        kind: 'wolfie',
+        volume: 35,
+        anotherProp: ""
+      }
+    }];
+    expect(mapped).toEqual(destination);
+  });
+  it("throws when no destination kind matches the source discriminant", () => {
+    enum PetType {
+      Wolf = "wolf",
+      Dog = "dog"
+    }
+
+    type WolfMapped = {
+      kind: PetType.Wolf;
+      volume: number;
+      prop: string;
+    }
+
+    type DogMapped = {
+      kind: PetType.Dog;
+      volume: number;
+      prop: string;
+    }
+
+    type Source = {
+      pet: WolfMapped | DogMapped;
+    }
+
+    type DawgUnmapped = {
+      kind: 'dawg';
+      volume: number;
+      someProp: string;
+    }
+
+    type WolfieUnmapped = {
+      kind: 'wolfie';
+      volume: number;
+      anotherProp: string;
+    }
+
+    type Destination = {
+      pet: DawgUnmapped | WolfieUnmapped;
+    }
+
+    const mapper = compileMapper<Source, Destination>({
+      pet: mapUnionBy("kind", {
+        kinds: { wolfie: PetType.Wolf, dawg: PetType.Dog },
+        cases: {
+          wolfie: map({ volume: "volume", anotherProp: rename("prop") }),
+          dawg: map({ volume: "volume", someProp: rename("prop") }),
+        },
+      }),
+    });
+
+    expect(() =>
+      mapper.mapOne({
+        pet: {
+          kind: "cat" as any,
+          volume: 1,
+          prop: "",
+        } as any,
+      } as any)
+    ).toThrow(/no destination kind/);
+  });
+  it("throws when destination kind exists but case is missing", () => {
+    enum PetType {
+      Wolf = "wolf",
+      Dog = "dog"
+    }
+
+    type WolfMapped = {
+      kind: PetType.Wolf;
+      volume: number;
+      prop: string;
+    }
+
+    type DogMapped = {
+      kind: PetType.Dog;
+      volume: number;
+      prop: string;
+    }
+
+    type Source = {
+      pet: WolfMapped | DogMapped;
+    }
+
+    type DawgUnmapped = {
+      kind: 'dawg';
+      volume: number;
+      someProp: string;
+    }
+
+    type WolfieUnmapped = {
+      kind: 'wolfie';
+      volume: number;
+      anotherProp: string;
+    }
+
+    type Destination = {
+      pet: DawgUnmapped | WolfieUnmapped;
+    }
+
+    const mapper = compileMapper<Source, Destination>({
+      pet: mapUnionBy("kind", {
+        kinds: { wolfie: PetType.Wolf, dawg: PetType.Dog },
+        //@ts-expect-error for a test
+        cases: {
+          dawg: map({ volume: "volume", someProp: rename("prop") }),
+        },
+      }),
+    });
+
+    expect(() =>
+      mapper.mapOne({
+        pet: {
+          kind: PetType.Wolf,
+          volume: 1,
+          prop: "",
+        },
+      } as any)
+    ).toThrow(/no case for destination kind/);
+  });
+  it("should return null when union value is null", () => {
+    enum PetType {
+      Wolf = "wolf",
+      Dog = "dog",
+    }
+
+    type WolfMapped = {
+      kind: PetType.Wolf;
+      volume: number;
+      prop: string;
+    };
+
+    type DogMapped = {
+      kind: PetType.Dog;
+      volume: number;
+      prop: string;
+    };
+
+    type Source = {
+      pet: (WolfMapped | DogMapped) | null;
+    };
+
+    type DawgUnmapped = {
+      kind: "dawg";
+      volume: number;
+      someProp: string;
+    };
+
+    type WolfieUnmapped = {
+      kind: "wolfie";
+      volume: number;
+      anotherProp: string;
+    };
+
+    type Destination = {
+      pet: (DawgUnmapped | WolfieUnmapped) | null;
+    };
+
+    const mapper = compileMapper<Source, Destination>({
+      pet: mapUnionBy("kind", {
+        kinds: {
+          wolfie: PetType.Wolf,
+          dawg: PetType.Dog,
+        },
+        cases: {
+          wolfie: map({
+            volume: "volume",
+            anotherProp: rename("prop"),
+          }),
+          dawg: map({
+            volume: "volume",
+            someProp: rename("prop"),
+          }),
+        },
+      }),
+    });
+
+    const result = mapper.mapOne({
+      pet: null,
+    });
+
+    expect(result).toEqual({
+      pet: null,
+    });
+  });
+
 });
