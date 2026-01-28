@@ -22,6 +22,29 @@ describe('enum mapper helpers', () => {
     expect(defaultRoleMap.toSource(InternalRole.READER_ENUM)).toBe(ApiRole.READER);
   });
 
+  it("maps common enums", () => {
+    enum CommonStatus {
+      ACTIVE = 'ACTIVE',
+      INACTIVE = 'INACTIVE',
+      PENDING = 'PENDING',
+    }
+
+    enum CommonStatusSchema {
+      ACTIVE = 'ACTIVE',
+      INACTIVE = 'INACTIVE',
+      PENDING = 'PENDING',
+    }
+
+    const commonStatusMap = enumMapper(CommonStatus, CommonStatusSchema, {
+      ACTIVE: CommonStatusSchema.ACTIVE,
+      INACTIVE: CommonStatusSchema.INACTIVE,
+      PENDING: CommonStatusSchema.PENDING,
+    }, "");
+
+    expect(commonStatusMap.toDestination(CommonStatus.ACTIVE)).toBe(CommonStatusSchema.ACTIVE);
+    expect(commonStatusMap.toSource(CommonStatusSchema.INACTIVE)).toBe(CommonStatus.INACTIVE);
+  })
+
   it('allows custom suffixes while keeping inference', () => {
     enum HttpStatus {
       OK = 'OK',

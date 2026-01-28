@@ -114,16 +114,19 @@ type IsPlainObject<T> =
   : true
   : false;
 
+type Prev = [never, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
 type PathIndex<
   S,
-  Prefix extends string = ""
+  Prefix extends string = "",
+  Depth extends number = 6
 > =
-  S extends object
-  ? {
+  Depth extends 0 ? never :
+  S extends object ? {
     [K in Extract<keyof S, string>]:
     | { path: `${Prefix}${K}`; value: S[K] }
     | (IsPlainObject<StripNullish<S[K]>> extends true
-      ? PathIndex<S[K], `${Prefix}${K}.`>
+      ? PathIndex<S[K], `${Prefix}${K}.`, Prev[Depth]>
       : never)
   }[Extract<keyof S, string>]
   : never;
