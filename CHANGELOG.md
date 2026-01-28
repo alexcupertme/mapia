@@ -1,3 +1,10 @@
+## [1.6.2](https://github.com/alexcupertme/mapia/compare/v1.6.1...v1.6.2) (2026-01-28)
+
+
+### Bug Fixes
+
+* try to lower type instantiations using depth threshold in PathIndex ([3246abb](https://github.com/alexcupertme/mapia/commit/3246abb32f56f9c8489e171eaab7bb70c1d3e056))
+
 ## [1.6.1](https://github.com/alexcupertme/mapia/compare/v1.6.0...v1.6.1) (2026-01-28)
 
 
