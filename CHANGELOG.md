@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/alexcupertme/mapia/compare/v1.5.0...v1.6.0) (2026-01-28)
+
+
+### Features
+
+* add union mapper ([c87636d](https://github.com/alexcupertme/mapia/commit/c87636dcc7de775cbf369afa77729d7ebc2398f9))
+
 # [1.5.0](https://github.com/alexcupertme/mapia/compare/v1.4.1...v1.5.0) (2026-01-20)
 
 
