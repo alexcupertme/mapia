@@ -269,45 +269,50 @@ type StripNullish<T> = Exclude<T, Nullish>;
 
 type ProducedObject<T> = ExtractObjectField<StripNullish<T>>;
 
-interface MapAfterDirective<
+interface MapAfterDirectiveBase<
   In,
-  Produced,
   Destination extends PlainObject,
   RootSource extends PlainObject,
-  ProducedObj extends PlainObject,
 > {
   __kind: "mapAfter";
-  fn: (value: In) => Produced;
-  mapper: MapperFns<ProducedObj, Destination, RootSource>;
-  config?: SimpleMapper<ProducedObj, Destination, RootSource>;
+  fn: (value: In) => any; // produced can be anything; runtime handles array/object/null
+  mapper: MapperFns<any, Destination, RootSource>; // <-- erase produced source type
+  config?: SimpleMapper<any, Destination, RootSource>;
+}
+
+export type MapAfterDirective<
+  In,
+  ProducedObj extends PlainObject,
+  Destination extends PlainObject,
+  RootSource extends PlainObject,
+> = MapAfterDirectiveBase<In, Destination, RootSource> & {
+  __producedObj?: ProducedObj;
+};
+
+export function mapAfter<
+  F extends (value: any) => any,
+  In extends PlainObject = Parameters<F>[0],
+  Produced = ReturnType<F>,
+  ProducedObj extends PlainObject = ProducedObject<ProducedItem<Produced>>,
+>(fn: F) {
+  return function <
+    Destination extends PlainObject,
+    RootSource extends PlainObject = PlainObject,
+  >(
+    mapping: NoInfer<SimpleMapper<ProducedObj, Destination, RootSource>>,
+  ): MapAfterDirective<In, ProducedObj, Destination, RootSource> {
+    return {
+      __kind: "mapAfter",
+      fn,
+      config: mapping as unknown as SimpleMapper<any, Destination, RootSource>,
+      mapper: compileMapper<ProducedObj, Destination, RootSource>(
+        mapping,
+      ) as unknown as MapperFns<any, Destination, RootSource>,
+    };
+  };
 }
 
 type ProducedItem<T> = StripNullish<T> extends readonly (infer U)[] ? U : T;
-
-export function mapAfter<
-  In,
-  F extends (value: In) => any,
-  Produced = ReturnType<F>,
-  ProducedObj extends PlainObject = ProducedObject<ProducedItem<Produced>>,
-  Destination extends PlainObject = PlainObject,
-  RootSource extends PlainObject = PlainObject,
->(
-  fn: F,
-  mapping: SimpleMapper<ProducedObj, Destination, RootSource>,
-): MapAfterDirective<In, Produced, Destination, RootSource, ProducedObj> {
-  return {
-    __kind: "mapAfter",
-    fn,
-    config: mapping as unknown as SimpleMapper<
-      ProducedObj,
-      Destination,
-      RootSource
-    >,
-    mapper: compileMapper<ProducedObj, Destination, RootSource>(
-      mapping as unknown as SimpleMapper<ProducedObj, Destination, RootSource>,
-    ),
-  };
-}
 
 export interface FlatMapAfterDirective<
   RootSource extends PlainObject,
@@ -642,7 +647,6 @@ type UnionObjectMapForField<
       : never
     : never
   : never;
-
 type MapAfterArrayForField<
   Source extends PlainObject,
   Destination extends PlainObject,
@@ -652,7 +656,12 @@ type MapAfterArrayForField<
   ? StripNullish<DestVal<Destination, D>> extends readonly (infer DE)[]
     ? ExtractObjectField<StripNullish<DE>> extends infer DEO
       ? DEO extends PlainObject
-        ? MapAfterDirective<Source[D], any, DEO, RootSource, DEO>
+        ? MapAfterDirective<
+            ExtractObjectField<ArrayElement<StripNullish<Source[D]>>>,
+            PlainObject,
+            DEO,
+            RootSource
+          >
         : never
       : never
     : never
@@ -666,7 +675,7 @@ type MapAfterObjectForField<
 > = D extends keyof Source
   ? ExtractObjectField<StripNullish<DestVal<Destination, D>>> extends infer DO
     ? DO extends PlainObject
-      ? MapAfterDirective<Source[D], any, DO, RootSource, DO>
+      ? MapAfterDirective<Source[D], PlainObject, DO, RootSource>
       : never
     : never
   : never;
@@ -910,7 +919,7 @@ ${indent(entries.join("\n"))}
         | TransformDirectiveSame<Source, string, (value: any) => any>
         | TransformDirectiveRenamed<Source, (source: Source) => any>
         | MapDirective<any, any, any>
-        | MapAfterDirective<any, any, any, any, any>
+        | MapAfterDirective<any, any, any, any>
         | MapUnionByDiscriminantDirective<any, any, any, any>
         | FlatMapDirective<any, any>
         | NullableMapFromDirective<RootSource, string, any>

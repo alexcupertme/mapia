@@ -1622,7 +1622,7 @@ describe("mapia", () => {
       id: string;
       items: Collection<{
         id: string;
-        anotherProp: string;
+        anotherProps: string;
       }>;
     };
 
@@ -1644,17 +1644,17 @@ describe("mapia", () => {
 
     const mapper = compileMapper<Source, Destination>({
       id: "id",
-      items: mapAfter((items) => items.getItems(), {
+      items: mapAfter((items: Source["items"]) => items.getItems())({
         id: "id",
-        anotherProp: "anotherProp",
+        anotherProp: rename("anotherProps"),
       }),
     });
 
     const actual = mapper.mapOne({
       id: "root",
       items: new Collection([
-        { id: "1", anotherProp: "a" },
-        { id: "2", anotherProp: "b" },
+        { id: "1", anotherProps: "a" },
+        { id: "2", anotherProps: "b" },
       ]),
     });
 
@@ -1683,13 +1683,10 @@ describe("mapia", () => {
     };
 
     const mapper = compileMapper<Source, Destination>({
-      items: mapAfter(
-        (items) => items.getItems(), // ← returns ARRAY
-        {
-          id: "id",
-          anotherProp: "anotherProp",
-        },
-      ),
+      items: mapAfter((items: Source["items"]) => items.getItems())({
+        id: "id",
+        anotherProp: "anotherProp",
+      }),
     });
 
     const result = mapper.mapOne({
@@ -1714,13 +1711,10 @@ describe("mapia", () => {
     };
 
     const mapper = compileMapper<Source, Destination>({
-      item: mapAfter(
-        (item) => item, // ← returns OBJECT
-        {
-          id: "id",
-          anotherProp: "anotherProp",
-        },
-      ),
+      item: mapAfter((item: Source["item"]) => item)({
+        id: "id",
+        anotherProp: "anotherProp",
+      }),
     });
 
     const result = mapper.mapOne({
@@ -1736,7 +1730,7 @@ describe("mapia", () => {
     type Source = {
       values: Collection<{
         id: string;
-        anotherProp: string;
+        anotherProps: string;
       }>;
     };
 
@@ -1760,15 +1754,15 @@ describe("mapia", () => {
       nested: flatMap({
         items: flatMapAfter((source: Source) => source.values.getItems())({
           id: "id",
-          anotherProp: "anotherProp",
+          anotherProp: rename("anotherProps"),
         }),
       }),
     });
 
     const actual = mapper.mapOne({
       values: new Collection([
-        { id: "1", anotherProp: "a" },
-        { id: "2", anotherProp: "b" },
+        { id: "1", anotherProps: "a" },
+        { id: "2", anotherProps: "b" },
       ]),
     });
 
