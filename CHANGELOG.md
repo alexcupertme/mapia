@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/alexcupertme/mapia/compare/v1.6.0...v1.6.1) (2026-01-28)
+
+
+### Bug Fixes
+
+* vendor js-string-escape and remove it from the dependencies ([eda9aa3](https://github.com/alexcupertme/mapia/commit/eda9aa3a330b2223a32e4f05c84c10643521d290))
+
 # [1.6.0](https://github.com/alexcupertme/mapia/compare/v1.5.0...v1.6.0) (2026-01-28)
 
 
