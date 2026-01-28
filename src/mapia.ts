@@ -1,4 +1,4 @@
-import jsStringEscape from "js-string-escape";
+import jsStringEscape from "./misc/js-string-escape";
 
 type HasUndefined<T> = undefined extends T ? true : false;
 type HasNull<T> = null extends T ? true : false;
