@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/alexcupertme/mapia/compare/v1.7.0...v1.8.0) (2026-01-28)
+
+
+### Features
+
+* add mapAfter directive, add support for arrays in flatMapAfter, add more strict linter rules (will fix eslint ignores after refactoring) ([ddc4d14](https://github.com/alexcupertme/mapia/commit/ddc4d14839596112299696fd7bf413ee906ad3f7))
+
 # [1.7.0](https://github.com/alexcupertme/mapia/compare/v1.6.2...v1.7.0) (2026-01-28)
 
 
