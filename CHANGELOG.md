@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/alexcupertme/mapia/compare/v1.6.2...v1.7.0) (2026-01-28)
+
+
+### Features
+
+* add mapAfter directive ([732cbb0](https://github.com/alexcupertme/mapia/commit/732cbb0796fe03630c1f97dfb1c1e71872261871))
+
 ## [1.6.2](https://github.com/alexcupertme/mapia/compare/v1.6.1...v1.6.2) (2026-01-28)
 
 
