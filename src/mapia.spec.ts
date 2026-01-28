@@ -16,6 +16,7 @@ import {
   nullableMapFrom,
   optionalMapFrom,
   mapUnionBy,
+  mapAfter,
 } from "./mapia";
 
 const formatOrderValue = (value: number): string => `formatted-${value}`;
@@ -1582,4 +1583,37 @@ describe("mapia", () => {
     });
   });
 
+  it("flatMap should work with arrays", () => {
+    type Source = {
+      id: string;
+      items: Collection<{
+        id: string;
+        anotherProp: string;
+      }>;
+    };
+
+    class Collection<T> {
+      constructor(private readonly items: T[]) { }
+
+      getItems(): T[] {
+        return this.items;
+      }
+    }
+
+    type Destination = {
+      id: string;
+      items: Array<{
+        id: string;
+        anotherProp: string;
+      }>;
+    };
+
+    const mapper = compileMapper<Source, Destination>({
+      id: "id",
+      items: mapAfter((items) => items.getItems(), {
+        id: "id",
+        anotherProp: "anotherProp",
+      }),
+    });
+  })
 });

@@ -262,6 +262,42 @@ type StripNullish<T> = Exclude<T, Nullish>;
 
 type ProducedObject<T> = ExtractObjectField<StripNullish<T>>;
 
+export interface MapAfterDirective<
+  In,
+  Produced,
+  Destination extends PlainObject,
+  RootSource extends PlainObject,
+  ProducedObj extends PlainObject,
+> {
+  __kind: "mapAfter";
+  fn: (value: In) => Produced;
+  mapper: MapperFns<ProducedObj, Destination, RootSource>;
+  config?: SimpleMapper<ProducedObj, Destination, RootSource>;
+}
+
+
+type ProducedItem<T> = StripNullish<T> extends readonly (infer U)[] ? U : T;
+
+export function mapAfter<
+  In,
+  F extends (value: In) => any,
+  Produced = ReturnType<F>,
+  ProducedObj extends PlainObject = ProducedObject<ProducedItem<Produced>>,
+  Destination extends PlainObject = PlainObject,
+  RootSource extends PlainObject = PlainObject,
+>(
+  fn: F,
+  mapping: SimpleMapper<ProducedObj, Destination, RootSource>
+): MapAfterDirective<In, Produced, Destination, RootSource, ProducedObj> {
+  return {
+    __kind: "mapAfter",
+    fn,
+    config: mapping as any,
+    mapper: compileMapper<ProducedObj, Destination, RootSource>(mapping as any),
+  };
+}
+
+
 export interface FlatMapAfterDirective<
   RootSource extends PlainObject,
   Destination extends PlainObject,
@@ -282,7 +318,7 @@ export function flatMapAfter<
   ): FlatMapAfterDirective<RootSource, Destination> {
     return {
       __kind: "flatMapAfter",
-      fn: fn as any,
+      fn,
       config: mapping,
       mapper: compileMapper<any, Destination, RootSource>(mapping as any),
     };
@@ -524,6 +560,37 @@ type UnionObjectMapForField<
   )
   : never;
 
+type MapAfterArrayForField<
+  Source extends PlainObject,
+  Destination extends PlainObject,
+  RootSource extends PlainObject,
+  D extends keyof Destination & string,
+> =
+  D extends keyof Source
+  ? StripNullish<DestVal<Destination, D>> extends readonly (infer DE)[]
+  ? ExtractObjectField<StripNullish<DE>> extends infer DEO
+  ? DEO extends PlainObject
+  ? MapAfterDirective<Source[D], any, DEO, RootSource, DEO>
+  : never
+  : never
+  : never
+  : never;
+
+type MapAfterObjectForField<
+  Source extends PlainObject,
+  Destination extends PlainObject,
+  RootSource extends PlainObject,
+  D extends keyof Destination & string,
+> =
+  D extends keyof Source
+  ? ExtractObjectField<StripNullish<DestVal<Destination, D>>> extends infer DO
+  ? DO extends PlainObject
+  ? MapAfterDirective<Source[D], any, DO, RootSource, DO>
+  : never
+  : never
+  : never;
+
+
 export type MapMatchingKeys<
   Source extends Record<string, any>,
   Destination extends Record<string, any>,
@@ -555,6 +622,9 @@ export type MapMatchingKeys<
 
         | NestedObjectMapForField<Source, Destination, RootSource, D>
         | UnionObjectMapForField<Source, Destination, RootSource, D>
+        | MapAfterObjectForField<Source, Destination, RootSource, D>
+        | MapAfterArrayForField<Source, Destination, RootSource, D>
+
 
         | (StripNullish<Source[D]> extends readonly any[]
           ? StripNullish<DestVal<Destination, D>> extends readonly any[]
@@ -594,12 +664,17 @@ export type MapMatchingKeys<
         )
       )
       | (
-        ObjOrNever<Destination[D]> extends infer DO
-        ? DO extends Record<string, any>
-        ? FlatMapAfterDirective<RootSource, DO>
+        StripNullish<Destination[D]> extends infer DV
+        ? DV extends readonly (infer DE)[]
+        ? ExtractObjectField<StripNullish<DE>> extends never
+        ? never
+        : FlatMapAfterDirective<RootSource, DV>
+        : DV extends Record<string, any>
+        ? FlatMapAfterDirective<RootSource, DV>
         : never
         : never
       )
+
       | (
         HasNull<Destination[D]> extends true
         ? (
@@ -911,16 +986,21 @@ ${indent(entries.join("\n"))}
             RootSource,
             any
           >;
+
           const mapHelperIndex = helperFns.push((value: any, root: any) =>
-            flatMapAfterDirective.mapper.mapOne(value, root)
+            Array.isArray(value)
+              ? flatMapAfterDirective.mapper.mapMany(value, root)
+              : flatMapAfterDirective.mapper.mapOne(value, root)
           ) - 1;
 
           const transformHelperIndex = helperFns.push(flatMapAfterDirective.fn) - 1;
+
           return `(() => {
-  const intermediate = helpers[${transformHelperIndex}](root);
-  return helpers[${mapHelperIndex}](intermediate, root);
-})()`;
+    const intermediate = helpers[${transformHelperIndex}](root);
+    return helpers[${mapHelperIndex}](intermediate, root);
+  })()`;
         }
+
         case "nullableMapFrom": {
           const nullableMapDirective = directive as NullableMapFromDirective<
             RootSource,

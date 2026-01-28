@@ -259,6 +259,26 @@ type Destination = {
 ```
 :::
 
+## mapAfter
+
+`mapAfter(fn)(mapping)` is a two-step directive:
+
+1. Run a **source transform**: `fn(source) -> intermediate object`
+2. Map the intermediate object using a nested mapping
+
+This is useful when dealing with ORM collections, data structures like `Map`, or any other data structure that needs to be transformed before mapping.
+
+```ts
+import { compileMapper, mapAfter } from "mapia";
+
+const mapper = compileMapper<Source, Destination>({
+  child: mapAfter((child) => child.getItems(), {
+    id: "id",
+    name: "name",
+  }),
+});
+```
+
 ## flatMap
 
 `flatMap()` switches context to the **root source** (or “current root”), letting you build a nested destination object using values that live outside the normal nested source location.
