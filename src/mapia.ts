@@ -121,17 +121,23 @@ type IsPlainObject<T> = T extends object
 
 type Prev = [never, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
+type PathEntry<P extends string, V> = readonly [P, V];
+
+type IsPlainObjectSafe<T> = [StripNullish<T>] extends [infer U]
+  ? IsPlainObject<U>
+  : false;
+
 type PathIndex<
   S,
   Prefix extends string = "",
-  Depth extends number = 6,
+  Depth extends number = 4,
 > = Depth extends 0
   ? never
   : S extends object
     ? {
         [K in Extract<keyof S, string>]:
-          | { path: `${Prefix}${K}`; value: S[K] }
-          | (IsPlainObject<StripNullish<S[K]>> extends true
+          | PathEntry<`${Prefix}${K}`, S[K]>
+          | (IsPlainObjectSafe<S[K]> extends true
               ? PathIndex<S[K], `${Prefix}${K}.`, Prev[Depth]>
               : never);
       }[Extract<keyof S, string>]
@@ -149,55 +155,83 @@ type ObjectAtPath<T, P extends string> = ExtractObjectField<
   Exclude<PathValue<T, P>, null | undefined>
 >;
 
-type IsExact<A, B> =
+type MutuallyAssignable<A, B> = [A] extends [B]
+  ? [B] extends [A]
+    ? true
+    : false
+  : false;
+
+type IsExactCore<A, B> =
   (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
     ? (<T>() => T extends B ? 1 : 2) extends <T>() => T extends A ? 1 : 2
       ? true
       : false
     : false;
 
-type MatchingPathsFromIndex<Idx, V> = Idx extends {
-  path: infer P extends string;
-  value: infer T;
-}
-  ? IsExact<T, V> extends true
+type IsExactFast<A, B> =
+  MutuallyAssignable<A, B> extends true ? IsExactCore<A, B> : false;
+
+type MatchingPathsFromIndex<Idx, V> = Idx extends readonly [
+  infer P extends string,
+  infer T,
+]
+  ? IsExactFast<T, V> extends true
     ? P
     : never
   : never;
 
 type IfNever<T, Y, N> = [T] extends [never] ? Y : N;
 
-type LocalRenameFor<DVal, Idx> = IfNever<
+type LocalRenameFor<
+  DVal,
+  Source extends Record<string, any>,
+  Idx = PathIndex<Source, "">, // <-- computed only if LocalRenameFor is instantiated
+> = IfNever<
   MatchingPathsFromIndex<Idx, DVal>,
   never,
   RenameDirective<MatchingPathsFromIndex<Idx, DVal> & string>
 >;
 
-type GlobalRenameFor<DVal, RootIdx> = IfNever<
+type GlobalRenameFor<
+  DVal,
+  RootSource extends Record<string, any>,
+  RootIdx = PathIndex<RootSource, "">,
+> = IfNever<
   MatchingPathsFromIndex<RootIdx, DVal>,
   never,
   GlobalRenameDirective<`source.${MatchingPathsFromIndex<RootIdx, DVal> & string}`>
 >;
-type PathsFromIndex<Idx> = Idx extends { path: infer P extends string }
-  ? P
-  : never;
 
-type ValueAtPathFromIndex<Idx, P extends string> =
-  Extract<Idx, { path: P }> extends { value: infer V } ? V : never;
+type Join<P extends string, K extends string> = P extends "" ? K : `${P}.${K}`;
 
-type ObjectishPathsFromIndex<Idx> =
-  PathsFromIndex<Idx> extends infer P
-    ? P extends string
-      ? ExtractObjectField<
-          StripNullish<ValueAtPathFromIndex<Idx, P>>
-        > extends never
+type ObjectishPathsDirect<
+  T,
+  Prefix extends string = "",
+  Depth extends number = 6,
+> = Depth extends 0
+  ? never
+  : T extends object
+    ? T extends readonly any[]
+      ? never
+      : T extends Primitive
         ? never
-        : P
-      : never
+        : {
+            [K in Extract<keyof T, string>]: StripNullish<T[K]> extends infer V
+              ? V extends object
+                ? V extends readonly any[]
+                  ? never
+                  : V extends Primitive
+                    ? never
+                    : // include this path + recurse
+                      | Join<Prefix, K>
+                        | ObjectishPathsDirect<V, Join<Prefix, K>, Prev[Depth]>
+                : never
+              : never;
+          }[Extract<keyof T, string>]
     : never;
 
 type ObjectishPaths<RootSource extends Record<string, any>> =
-  ObjectishPathsFromIndex<PathIndex<RootSource, "">>;
+  ObjectishPathsDirect<RootSource, "", 6>;
 
 export interface NullableMapFromDirective<
   RootSource extends Record<string, any>,
@@ -312,7 +346,7 @@ export function mapAfter<
   };
 }
 
-type ProducedItem<T> = StripNullish<T> extends readonly (infer U)[] ? U : T;
+type ProducedItem<T> = [StripNullish<T>] extends [readonly (infer U)[]] ? U : T;
 
 export interface FlatMapAfterDirective<
   RootSource extends PlainObject,
@@ -541,11 +575,17 @@ type DestVal<
 
 type ObjOrNever<T> = ExtractObjectField<StripNullish<T>>;
 
-type IsUnion<T, U = T> = T extends any
-  ? [U] extends [T]
-    ? false
-    : true
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
+  k: infer I,
+) => void
+  ? I
   : never;
+
+type IsUnion<T> = [T] extends [never]
+  ? false
+  : [T] extends [UnionToIntersection<T>]
+    ? false
+    : true;
 
 type NestedObjectMapForField<
   Source extends Record<string, any>,
@@ -694,21 +734,19 @@ export type MapMatchingKeys<
   Source extends Record<string, any>,
   Destination extends Record<string, any>,
   RootSource extends Record<string, any> = Source,
-  SrcIdx extends PathIndex<Source, ""> = PathIndex<Source, "">,
-  RootIdx extends PathIndex<RootSource, ""> = PathIndex<RootSource, "">,
 > = Partial<{
   [D in keyof Destination & string]-?:
     | (D extends keyof Source
-        ? IsExact<Source[D], DestVal<Destination, D>> extends true
+        ? IsExactFast<Source[D], DestVal<Destination, D>> extends true
           ? D
           : never
         : never)
     | (D extends keyof Source
-        ? IsExact<Source[D], DestVal<Destination, D>> extends true
+        ? IsExactFast<Source[D], DestVal<Destination, D>> extends true
           ? never
           :
-              | LocalRenameFor<DestVal<Destination, D>, SrcIdx>
-              | GlobalRenameFor<DestVal<Destination, D>, RootIdx>
+              | LocalRenameFor<DestVal<Destination, D>, Source>
+              | GlobalRenameFor<DestVal<Destination, D>, RootSource>
               | TransformDirectiveSame<
                   Source,
                   D,
@@ -749,8 +787,8 @@ export type MapMatchingKeys<
                   ? IgnoreDirective
                   : never)
         :
-            | LocalRenameFor<DestVal<Destination, D>, SrcIdx>
-            | GlobalRenameFor<DestVal<Destination, D>, RootIdx>
+            | LocalRenameFor<DestVal<Destination, D>, Source>
+            | GlobalRenameFor<DestVal<Destination, D>, RootSource>
             | TransformDirectiveRenamed<
                 Source,
                 (s: Source) => DestVal<Destination, D>
