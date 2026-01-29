@@ -1,3 +1,10 @@
+## [1.8.2](https://github.com/alexcupertme/mapia/compare/v1.8.1...v1.8.2) (2026-01-29)
+
+
+### Bug Fixes
+
+* optimize TS instantiations ([91955ea](https://github.com/alexcupertme/mapia/commit/91955ea535a750ae695822e9000215a76e36b362))
+
 ## [1.8.1](https://github.com/alexcupertme/mapia/compare/v1.8.0...v1.8.1) (2026-01-28)
 
 
